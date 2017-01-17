@@ -65,7 +65,7 @@ pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dst );
 pv('Creating directory tree...');
 my $rsync = '';
 $rsync = "$opt_sudo " if $opt_sudo;
-$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src\" \"$opt_dst";
+$rsync .= "$opt_rsync --delete -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src\" \"$opt_dst";
 $rsync =~ s/\/[^\/]*$//;
 $rsync .= '"';
 pd($rsync);
