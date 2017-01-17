@@ -86,7 +86,7 @@ $spider = AnyEvent::ForkManager->new(
 
 # step 2, sync nested directories:
 pv('Collect files...');
-collect_entries( $opt_src, \@entries, 0, 0 );
+collect_entries( $opt_src, \@entries );
 @entries = sort { scalar split( '/', $b ) <=> scalar split( '/', $a ) } @entries;
 pv('Sync directory tree...');
 sync_entries( \@entries );
@@ -94,7 +94,8 @@ sync_entries( \@entries );
 #step 3, scan files in top-level directory:
 pv('Collect root entries...');
 $#entries = -1;
-collect_entries( $opt_src, \@entries, 0, 1 );
+%excludes = ();
+collect_entries( $opt_src, \@entries, 1 );
 pv('Sync root entries...');
 sync_entries( \@entries, 1 );
 
@@ -103,6 +104,7 @@ sub sync_entries
 {
     my ( $entries, $is_file ) = @_;
     foreach my $dir ( @{$entries} ) {
+        $excludes{$dir} = undef;
         $spider->start(
             cb => sub {
                 my ( $pm, $dir ) = @_;
@@ -195,7 +197,7 @@ sub pd
 # ------------------------------------------------------------------------------
 sub collect_entries
 {
-    my ( $dir, $entries, $lvl, $files_only ) = @_;
+    my ( $dir, $entries, $files_only, $lvl ) = @_;
 
     $lvl ||= 0;
     if ($opt_sudo) {
@@ -226,7 +228,7 @@ sub collect_entries
                 else {
                     next unless -d "$dir/$_";
                     push @{$entries}, "$dir/$_";
-                    collect_entries( "$dir/$_", $entries, $lvl + 1, $files_only );
+                    collect_entries( "$dir/$_", $entries, $files_only, $lvl + 1 );
                 }
             }
         }
