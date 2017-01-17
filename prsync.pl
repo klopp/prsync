@@ -12,7 +12,7 @@ use AnyEvent::ForkManager;
 use Encode qw/decode_utf8/;
 
 # ------------------------------------------------------------------------------
-my $VERSION   = '1.0';
+my $VERSION   = '1.1';
 my $SUDO      = '/usr/bin/sudo';
 my $opt_p     = 16;
 my $opt_rsync = '/usr/bin/rsync';
