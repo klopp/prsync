@@ -9,6 +9,7 @@ use File::Basename qw/basename fileparse/;
 use File::Temp qw/tempfile/;
 use POSIX qw/strftime/;
 use AnyEvent::ForkManager;
+use Encode qw/decode_utf8/;
 
 # ------------------------------------------------------------------------------
 my $VERSION   = '1.0';
@@ -49,7 +50,7 @@ usage("Can not find \"rsync\" executable ($opt_rsync)") unless -x $opt_rsync;
 usage("No access to temporary directory \"$opt_tmp\"")
     unless -d $opt_tmp && -w $opt_tmp;
 mkdir $opt_dst;
-usage("No access to destination directory \"$opt_dst\"") unless -d $opt_dst;
+#usage("No access to destination directory \"$opt_dst\"") unless -d $opt_dst;
 
 # ------------------------------------------------------------------------------
 $opt_ropt = join ' ', @ARGV if @ARGV;
@@ -201,7 +202,7 @@ sub collect_entries
     if ($opt_sudo) {
         my $find_args = $files_only ? '-maxdepth 1 -type f' : '-type d';
         my $find = "$opt_sudo find \"$dir\" $find_args |";
-        if ( open my $dh, '<', $find ) {
+        if ( open my $dh, $find ) {
             while ( defined( my $line = <$dh> ) ) {
                 chomp $line;
                 push @{$entries}, $line;
@@ -209,7 +210,8 @@ sub collect_entries
             close $dh;
         }
         else {
-            print "ERROR: can not open \"$find\":\n\t$!\n";
+            # TODO detect actual locale?
+            print "ERROR: can not open \"$find\":\n\t".decode_utf8($!)."\n";
             exit 2;
         }
     }
