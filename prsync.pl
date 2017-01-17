@@ -50,7 +50,6 @@ usage("Can not find \"rsync\" executable ($opt_rsync)") unless -x $opt_rsync;
 usage("No access to temporary directory \"$opt_tmp\"")
     unless -d $opt_tmp && -w $opt_tmp;
 mkdir $opt_dst;
-#usage("No access to destination directory \"$opt_dst\"") unless -d $opt_dst;
 
 # ------------------------------------------------------------------------------
 $opt_ropt = join ' ', @ARGV if @ARGV;
@@ -260,8 +259,8 @@ Valid options, * - required:
     -dst   DIR   * destination directory
     -tmp   DIR     temporary directory, default: '%s'
     -rsync PATH    rsync executable, default: '%s'
-    -sudo  [PATH]  use sudo [executable], default: NO, executable: '%s'
-    -p     N       max processes, > 1, default: '%d'
+    -sudo  [PATH]  use sudo [executable], defaults: NO, executable: '%s'
+    -p     N       max processes, >1, default: '%d'
     -v             increase verbosity
     -d             print debug information
     --     OPT     rsync options, default: '%s'
