@@ -79,7 +79,7 @@ my $spider = AnyEvent::ForkManager->new(
 pv('Creating directory tree...');
 sync_entries( [$opt_src], '-a -f"+ */" -f"- *" --numeric-ids'  );
 
-#step 2: collect files
+#step 2: collect big files
 my @entries;
 pv('Collect files...');
 collect_entries( $opt_src, \@entries );
@@ -221,7 +221,7 @@ Valid options, * - required:
     -tmp   DIR     temporary directory, default: '%s'
     -rsync PATH    rsync executable, default: '%s'
     -sudo  [PATH]  use sudo [executable], defaults: NO, executable: '%s'
-    -size  SIZE    file size to create separate process, default '%s'
+    -size  SIZE    file size to put in separate process, default '%s' (see 'man find')
     -p     N       max processes, >0, default: '%d'
     -v             increase verbosity
     -d             print debug information
