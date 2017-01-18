@@ -20,9 +20,9 @@ my $opt_ropt  = '--delete -a --info=none,name1,copy1';
 my $opt_tmp   = '/tmp';
 my $opt_sudo  = undef;
 my $opt_src;
-my $opt_dst;
+my $opt_dbgst;
 my $opt_v;
-my $opt_d;
+my $opt_dbg;
 my $opt_s;
 
 # ------------------------------------------------------------------------------
@@ -32,10 +32,10 @@ usage()
     && GetOptions(
         's'       => \$opt_s,
         'v'       => \$opt_v,
-        'd'       => \$opt_d,
+        'dbg'     => \$opt_dbg,
         'p=i'     => \$opt_p,
         'src=s'   => \$opt_src,
-        'dst=s'   => \$opt_dst,
+        'dst=s'   => \$opt_dbgst,
         'tmp=s'   => \$opt_tmp,
         'rsyns=s' => \$opt_rsync,
         'sudo:s'  => \$opt_sudo,
@@ -44,7 +44,7 @@ usage()
 
 usage('Invalid "p" option') if $opt_p < 2;
 usage('No "src" option') unless $opt_src;
-usage('No "dst" option') unless $opt_dst;
+usage('No "dst" option') unless $opt_dbgst;
 $opt_sudo = $SUDO if defined $opt_sudo && !$opt_sudo;
 usage("Can not find \"sudo\" executable ($opt_sudo)")
     if $opt_sudo && !-x $opt_sudo;
@@ -55,18 +55,18 @@ usage("No access to temporary directory \"$opt_tmp\"")
 # ------------------------------------------------------------------------------
 $opt_ropt = join ' ', @ARGV if @ARGV;
 $opt_src =~ s/\/*$//g;
-$opt_dst =~ s/\/*$//g;
+$opt_dbgst =~ s/\/*$//g;
 my @entries;
 my %excludes;
 my $spider;
 
-pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dst );
+pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dbgst );
 
 #step 1: create directories:
 pv('Creating directory tree...');
 my $rsync = '';
 $rsync = "$opt_sudo " if $opt_sudo;
-$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst";
+$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dbgst";
 #$rsync =~ s/\/+[^\/]*$//;
 $rsync .= '/"';
 pd($rsync);
@@ -139,7 +139,7 @@ sub sync_entry
     $rsync_opt ||= $opt_ropt;
     my $target = $source;
     $target =~ s/^$opt_src//;
-    $target = "$opt_dst$target";
+    $target = "$opt_dbgst$target";
 
     $source =~ s/\/*$//g;
     $target =~ s/\/*$//g;
@@ -197,7 +197,7 @@ sub pv
 # ------------------------------------------------------------------------------
 sub pd
 {
-    return _pp( $opt_d, @_ );
+    return _pp( $opt_dbg, @_ );
 }
 
 # ------------------------------------------------------------------------------
@@ -275,7 +275,7 @@ Valid options, * - required:
     -p     N       max processes, >1, default: '%d'
     -v             increase verbosity
     -s             optimize for small files
-    -d             print debug information
+    -dbg           print debug information
     --     OPT     rsync options, default: '%s'
 
 EOU
