@@ -24,14 +24,14 @@ my $opt_src;
 my $opt_dst;
 my $opt_v;
 my $opt_d;
-my $opt_small;
+my $opt_s;
 
 # ------------------------------------------------------------------------------
 usage()
     unless (
     @ARGV
     && GetOptions(
-        's'       => \$opt_small,
+        's'       => \$opt_s,
         'v'       => \$opt_v,
         'd'       => \$opt_d,
         'p=i'     => \$opt_p,
@@ -97,7 +97,7 @@ sync_entries( \@entries );
 
 #step 3, scan files in top-level directory:
 pv('Collect root entries...');
-if ($opt_small) {
+if ($opt_s) {
     sync_entries( [ $opt_src ] );
 }
 else {
@@ -209,12 +209,14 @@ sub collect_entries
 
     $lvl ||= 0;
     if ($opt_sudo) {
-        my $ddepth    = $opt_small  ? "-maxdepth $opt_p"    : '';
+        my $ddepth    = $opt_s  ? "-maxdepth $opt_p"    : '';
         my $find_args = $files_only ? '-maxdepth 1 -type f' : "-type d $ddepth";
         my $find = "$opt_sudo find \"$dir\" $find_args |";
         if ( open my $dh, $find ) {
             while ( defined( my $line = <$dh> ) ) {
                 chomp $line;
+                next unless $line;
+                last if $opt_s && ( scalar @{$entries} >= $opt_p );
                 push @{$entries}, $line;
             }
             close $dh;
@@ -235,7 +237,7 @@ sub collect_entries
                     push @{$entries}, "$dir/$_" if -f "$dir/$_";
                 }
                 else {
-                    return $entries if $opt_small && ( scalar @{$entries} >= $opt_p );
+                    return $entries if $opt_s && ( scalar @{$entries} >= $opt_p );
                     next unless -d "$dir/$_";
                     push @{$entries}, "$dir/$_";
                     collect_entries( "$dir/$_", $entries, $files_only, $lvl + 1 );
