@@ -65,7 +65,8 @@ pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dst );
 pv('Creating directory tree...');
 my $rsync = '';
 $rsync = "$opt_sudo " if $opt_sudo;
-$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst/\"";
+$rsync
+    .= "$opt_rsync --temp-dir=\"$opt_tmp\" -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst/\"";
 pd($rsync);
 
 system $rsync;
@@ -86,7 +87,7 @@ my $spider = AnyEvent::ForkManager->new(
 # step 2, sync nested directories:
 pv('Collect files...');
 collect_entries( $opt_src, \@entries );
-@entries = sort { scalar split( '/', $b ) <=> scalar split( '/', $a ) } @entries;
+@entries = sort { dir_sort( $b, $a ) } @entries;
 pv('Sync directory tree...');
 sync_entries( \@entries );
 
@@ -108,6 +109,7 @@ sub sync_entries
 {
     my ( $entries, $is_file ) = @_;
     foreach my $dir ( @{$entries} ) {
+        next if exists $excludes{$dir};
         $excludes{$dir} = undef;
         $spider->start(
             cb => sub {
@@ -132,24 +134,19 @@ sub sync_entries
 # ------------------------------------------------------------------------------
 sub sync_entry
 {
-    my ( $id, $source, $is_file, $rsync_opt ) = @_;
+    my ( $id, $src, $is_file, $rsync_opt ) = @_;
 
     $rsync_opt ||= $opt_ropt;
-    my $target = $source;
+    my $target = $src;
     $target =~ s/^$opt_src//;
     $target = "$opt_dst$target";
 
-    $source =~ s/\/*$//g;
+    $src =~ s/\/*$//g;
     $target =~ s/\/*$//g;
-
-    unless ($is_file) {
-        $source .= '/';
-        $target .= '/';
-    }
 
     my $rsync = '';
     $rsync = "$opt_sudo " if $opt_sudo;
-    $rsync .= "$opt_rsync ";
+    $rsync .= "$opt_rsync --temp-dir=\"$opt_tmp\" ";
     my ( $th, $tn );
 
     if ( !$is_file && scalar keys %excludes ) {
@@ -165,15 +162,29 @@ sub sync_entry
             print "ERROR: can not create temp file in \"$opt_tmp\":\n$@";
             return;
         }
-        print $th join( "\n", map { $_ eq $source ? '' : "$_/.*\n$_*" } keys %excludes );
+        print $th join( "\n",
+            map { $_ eq $src ? '' : "$_/.*\n$_/*" } sort { dir_sort( $b, $a ) } keys %excludes );
         close $th;
         $rsync .= '--exclude-from="' . $tn . '" ';
     }
 
-    $rsync .= "$rsync_opt \"$source\" \"$target\"";
+    unless ($is_file) {
+        $src    .= '/';
+        $target .= '/';
+    }
+    
+    $rsync .= "$rsync_opt \"$src\" \"$target\"";
     pd( '[%d] %s', $id, $rsync );
     system $rsync;
-    unlink $tn if $tn;
+
+    #    unlink $tn if $tn;
+}
+
+# ------------------------------------------------------------------------------
+sub dir_sort
+{
+    my ( $d1, $d2 ) = @_;
+    return scalar split( '/', $d1 ) <=> scalar split( '/', $d2 );
 }
 
 # ------------------------------------------------------------------------------
