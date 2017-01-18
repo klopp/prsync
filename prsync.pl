@@ -10,6 +10,7 @@ use File::Temp qw/tempfile/;
 use POSIX qw/strftime/;
 use AnyEvent::ForkManager;
 use Encode qw/decode_utf8/;
+use DDP;
 
 # ------------------------------------------------------------------------------
 my $VERSION   = '1.1';
@@ -18,31 +19,31 @@ my $opt_p     = 8;
 my $opt_rsync = '/usr/bin/rsync';
 my $opt_ropt  = '--delete -a --info=none,name1,copy1';
 my $opt_tmp   = '/tmp';
+my $opt_size  = '10M';
 my $opt_sudo  = undef;
 my $opt_src;
 my $opt_dst;
 my $opt_v;
 my $opt_d;
-my $opt_s;
 
 # ------------------------------------------------------------------------------
 usage()
     unless (
     @ARGV
     && GetOptions(
-        's'       => \$opt_s,
         'v'       => \$opt_v,
         'd'       => \$opt_d,
         'p=i'     => \$opt_p,
         'src=s'   => \$opt_src,
         'dst=s'   => \$opt_dst,
         'tmp=s'   => \$opt_tmp,
+        'size=s'  => \$opt_size,
         'sudo:s'  => \$opt_sudo,
         'rsyns=s' => \$opt_rsync,
     )
     );
 
-usage('Invalid "p" option') if $opt_p < 2;
+usage('Invalid "p" option') if $opt_p < 1;
 usage('No "src" option') unless $opt_src;
 usage('No "dst" option') unless $opt_dst;
 $opt_sudo = $SUDO if defined $opt_sudo && !$opt_sudo;
@@ -66,10 +67,18 @@ pv('Creating directory tree...');
 my $rsync = '';
 $rsync = "$opt_sudo " if $opt_sudo;
 $rsync
-    .= "$opt_rsync --temp-dir=\"$opt_tmp\" -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst/\"";
+    .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst/\"";
 pd($rsync);
-
 system $rsync;
+
+pv('Collect files...');
+collect_entries( $opt_src, \@entries );
+@entries = sort { dir_sort( $b, $a ) } @entries;
+pv('Sync directory tree...');
+p @entries;
+exit;
+#sync_entries( \@entries );
+
 
 my $spider = AnyEvent::ForkManager->new(
     max_workers => $opt_p,
@@ -84,6 +93,7 @@ my $spider = AnyEvent::ForkManager->new(
     }
 );
 
+=pod
 # step 2, sync nested directories:
 pv('Collect files...');
 collect_entries( $opt_src, \@entries );
@@ -103,6 +113,7 @@ else {
     pv('Sync root entries...');
     sync_entries( \@entries, 1 );
 }
+=cut
 
 # ------------------------------------------------------------------------------
 sub sync_entries
@@ -146,7 +157,7 @@ sub sync_entry
 
     my $rsync = '';
     $rsync = "$opt_sudo " if $opt_sudo;
-    $rsync .= "$opt_rsync --temp-dir=\"$opt_tmp\" ";
+    $rsync .= "$opt_rsync ";
     my ( $th, $tn );
 
     if ( !$is_file && scalar keys %excludes ) {
@@ -212,55 +223,23 @@ sub pd
 # ------------------------------------------------------------------------------
 sub collect_entries
 {
-    my ( $dir, $entries, $files_only, $lvl ) = @_;
+    my ( $dir, $entries ) = @_;
 
-    $lvl ||= 0;
-    if ($opt_sudo) {
-        my $ddepth    = $opt_s      ? "-maxdepth $opt_p"    : '';
-        my $find_args = $files_only ? '-maxdepth 1 -type f' : "$ddepth -type d";
-        my $find = "$opt_sudo find \"$dir\" $find_args |";
-        if ( open my $dh, $find ) {
-            while ( defined( my $line = <$dh> ) ) {
-                chomp $line;
-                next unless $line;
-                last if $opt_s && ( scalar @{$entries} >= $opt_p );
-                push @{$entries}, $line;
-            }
-            close $dh;
+    my $find = '';
+    $find = "$opt_sudo " if $opt_sudo;
+    $find .= "find \"$dir\" -size $opt_size -type f";
+    if ( open my $dh, $find ) {
+        while ( defined( my $line = <$dh> ) ) {
+            chomp $line;
+            next unless $line;
+            push @{$entries}, $line;
         }
-        else {
-            # TODO detect actual locale?
-            print "ERROR: can not open \"$find\":\n\t" . decode_utf8($!) . "\n";
-            exit 2;
-        }
+        close $dh;
     }
     else {
-        if ( opendir my $dh, $dir ) {
-            my @de = readdir $dh;
-            closedir $dh;
-            for (@de) {
-                next if $_ eq '.' || $_ eq '..';
-                if ($files_only) {
-                    push @{$entries}, "$dir/$_" if -f "$dir/$_";
-                }
-                else {
-                    return $entries if $opt_s && ( scalar @{$entries} >= $opt_p );
-                    next unless -d "$dir/$_";
-                    push @{$entries}, "$dir/$_";
-                    collect_entries( "$dir/$_", $entries, $files_only, $lvl + 1 );
-                }
-            }
-        }
-        elsif ( !$lvl ) {
-
-            # show error for top level only
-            print "ERROR: can not open directory \"$dir\": $!\n";
-            exit 2;
-        }
-        else {
-            print "Skip directory \"$dir\": $!\n" if $opt_v;
-            $excludes{$dir} = undef;
-        }
+        # TODO detect actual locale?
+        print "ERROR: can not open \"$find\":\n\t" . decode_utf8($!) . "\n";
+        exit 2;
     }
 
     return $entries;
@@ -281,14 +260,14 @@ Valid options, * - required:
     -tmp   DIR     temporary directory, default: '%s'
     -rsync PATH    rsync executable, default: '%s'
     -sudo  [PATH]  use sudo [executable], defaults: NO, executable: '%s'
-    -p     N       max processes, >1, default: '%d'
+    -size  SIZE    file size to create separate process, default '%s'
+    -p     N       max processes, >0, default: '%d'
     -v             increase verbosity
-    -s             optimize for small files (try decrease -p for best results)
     -d             print debug information
     --     OPT     rsync options, default: '%s'
 
 EOU
-    printf $u, $VERSION, basename($0), $opt_tmp, $opt_rsync, $SUDO, $opt_p, $opt_ropt;
+    printf $u, $VERSION, basename($0), $opt_tmp, $opt_rsync, $SUDO, $opt_size, $opt_p, $opt_ropt;
     exit 1;
 }
 
