@@ -14,7 +14,7 @@ use Encode qw/decode_utf8/;
 # ------------------------------------------------------------------------------
 my $VERSION   = '1.1';
 my $SUDO      = '/usr/bin/sudo';
-my $opt_p     = 16;
+my $opt_p     = 8;
 my $opt_rsync = '/usr/bin/rsync';
 my $opt_ropt  = '--delete -a --info=none,name1,copy1';
 my $opt_tmp   = '/tmp';
