@@ -205,8 +205,8 @@ sub collect_entries
 
     $lvl ||= 0;
     if ($opt_sudo) {
-        my $ddepth    = $opt_s      ? " -maxdepth $opt_p"   : '';
-        my $find_args = $files_only ? '-maxdepth 1 -type f' : "-type d$ddepth";
+        my $ddepth    = $opt_s      ? "-maxdepth $opt_p"    : '';
+        my $find_args = $files_only ? '-maxdepth 1 -type f' : "$ddepth -type d";
         my $find = "$opt_sudo find \"$dir\" $find_args |";
         if ( open my $dh, $find ) {
             while ( defined( my $line = <$dh> ) ) {
