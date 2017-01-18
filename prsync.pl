@@ -20,7 +20,7 @@ my $opt_ropt  = '--delete -a --info=none,name1,copy1';
 my $opt_tmp   = '/tmp';
 my $opt_sudo  = undef;
 my $opt_src;
-my $opt_dbgst;
+my $opt_dst;
 my $opt_v;
 my $opt_d;
 my $opt_s;
@@ -35,16 +35,16 @@ usage()
         'd'       => \$opt_d,
         'p=i'     => \$opt_p,
         'src=s'   => \$opt_src,
-        'dst=s'   => \$opt_dbgst,
+        'dst=s'   => \$opt_dst,
         'tmp=s'   => \$opt_tmp,
-        'rsyns=s' => \$opt_rsync,
         'sudo:s'  => \$opt_sudo,
+        'rsyns=s' => \$opt_rsync,
     )
     );
 
 usage('Invalid "p" option') if $opt_p < 2;
 usage('No "src" option') unless $opt_src;
-usage('No "dst" option') unless $opt_dbgst;
+usage('No "dst" option') unless $opt_dst;
 $opt_sudo = $SUDO if defined $opt_sudo && !$opt_sudo;
 usage("Can not find \"sudo\" executable ($opt_sudo)")
     if $opt_sudo && !-x $opt_sudo;
@@ -55,26 +55,22 @@ usage("No access to temporary directory \"$opt_tmp\"")
 # ------------------------------------------------------------------------------
 $opt_ropt = join ' ', @ARGV if @ARGV;
 $opt_src =~ s/\/*$//g;
-$opt_dbgst =~ s/\/*$//g;
+$opt_dst =~ s/\/*$//g;
 my @entries;
 my %excludes;
-my $spider;
 
-pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dbgst );
+pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dst );
 
 #step 1: create directories:
 pv('Creating directory tree...');
 my $rsync = '';
 $rsync = "$opt_sudo " if $opt_sudo;
-$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dbgst";
-
-#$rsync =~ s/\/+[^\/]*$//;
-$rsync .= '/"';
+$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst/";
 pd($rsync);
 
 system $rsync;
 
-$spider = AnyEvent::ForkManager->new(
+my $spider = AnyEvent::ForkManager->new(
     max_workers => $opt_p,
     on_start    => sub {
         my ( $pm, $pid, $dir ) = @_;
@@ -141,7 +137,7 @@ sub sync_entry
     $rsync_opt ||= $opt_ropt;
     my $target = $source;
     $target =~ s/^$opt_src//;
-    $target = "$opt_dbgst$target";
+    $target = "$opt_dst$target";
 
     $source =~ s/\/*$//g;
     $target =~ s/\/*$//g;
