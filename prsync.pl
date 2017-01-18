@@ -25,6 +25,7 @@ my $opt_src;
 my $opt_dst;
 my $opt_v;
 my $opt_d;
+my ( $exclude_file, $exclude_handle );
 
 # ------------------------------------------------------------------------------
 usage()
@@ -57,78 +58,68 @@ usage("No access to temporary directory \"$opt_tmp\"")
 $opt_ropt = join ' ', @ARGV if @ARGV;
 $opt_src =~ s/\/*$//g;
 $opt_dst =~ s/\/*$//g;
-my @entries;
-my %excludes;
 
 pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dst );
 
-#step 1: create directories:
-pv('Creating directory tree...');
-my $rsync = '';
-$rsync = "$opt_sudo " if $opt_sudo;
-$rsync
-    .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst/\"";
-pd($rsync);
-system $rsync;
-
-pv('Collect files...');
-collect_entries( $opt_src, \@entries );
-@entries = sort { dir_sort( $b, $a ) } @entries;
-pv('Sync directory tree...');
-p @entries;
-exit;
-#sync_entries( \@entries );
-
-
 my $spider = AnyEvent::ForkManager->new(
-    max_workers => $opt_p,
+    max_workers => $opt_p + 1,
     on_start    => sub {
-        my ( $pm, $pid, $dir ) = @_;
-        pd( '[%d] start sync "%s"', $pid, $dir );
+        my ( $pm, $pid, $entry ) = @_;
+        pd( '[%d] start sync "%s"', $pid, $entry );
     },
 
     on_finish => sub {
-        my ( $pm, $pid, $status, $dir ) = @_;
-        pd( '[%d] "%s" sync status: %s', $pid, $dir, $status );
+        my ( $pm, $pid, $status, $entry ) = @_;
+        pd( '[%d] "%s" sync status: %s', $pid, $entry, $status );
+#        exit 0;
     }
 );
 
-=pod
-# step 2, sync nested directories:
+#step 1: create directories
+pv('Creating directory tree...');
+sync_entries( [$opt_src], '-a -f"+ */" -f"- *" --numeric-ids'  );
+
+#step 2: collect files
+my @entries;
 pv('Collect files...');
 collect_entries( $opt_src, \@entries );
-@entries = sort { dir_sort( $b, $a ) } @entries;
-pv('Sync directory tree...');
-sync_entries( \@entries );
+if (@entries) {
+    eval {
+        ( $exclude_handle, $exclude_file ) = tempfile(
+            'XXXXXXXX',
+            SUFFIX => '.' . ( fileparse( $0, qr/\.[^.]*/ ) )[0] || '$$$',
+            DIR => $opt_tmp,
+        );
+    };
 
-#step 3, scan files in top-level directory:
-pv('Collect root entries...');
-if ($opt_s) {
-    sync_entries( [$opt_src] );
+    if ($@) {
+        print "ERROR: can not create temp file in \"$opt_tmp\":\n$@";
+        exit 2;
+    }
+    print $exclude_handle join( "\n", @entries );
+    close $exclude_handle;
 }
-else {
-    $#entries = -1;
-    %excludes = ();
-    collect_entries( $opt_src, \@entries, 1 );
-    pv('Sync root entries...');
-    sync_entries( \@entries, 1 );
-}
-=cut
+
+#step 3: sync directory tree
+pv('Sync directory tree...');
+unshift @entries, $opt_src;
+sync_entries( \@entries );
+unlink $exclude_file if $exclude_file;
 
 # ------------------------------------------------------------------------------
 sub sync_entries
 {
-    my ( $entries, $is_file ) = @_;
-    foreach my $dir ( @{$entries} ) {
-        next if exists $excludes{$dir};
-        $excludes{$dir} = undef;
+    my ($entries, $rsync_opt) = @_;  
+    my $idx = 0;
+    foreach my $entry ( @{$entries} ) {
         $spider->start(
             cb => sub {
-                my ( $pm, $dir ) = @_;
-                sync_entry( $$, $dir, $is_file );
+                my ( $pm, $entry, $idx, $rsync_opt ) = @_;
+                sync_entry( $entry, $idx ? undef : $exclude_file, $rsync_opt );
             },
-            args => [$dir]
+            args => [ $entry, $idx, $rsync_opt ]
         );
+        ++$idx;
     }
 
     my $condvar = AnyEvent->condvar;
@@ -145,57 +136,27 @@ sub sync_entries
 # ------------------------------------------------------------------------------
 sub sync_entry
 {
-    my ( $id, $src, $is_file, $rsync_opt ) = @_;
+    my ( $entry, $exclude_file, $rsync_opt ) = @_;
 
     $rsync_opt ||= $opt_ropt;
-    my $target = $src;
-    $target =~ s/^$opt_src//;
-    $target = "$opt_dst$target";
-
-    $src =~ s/\/*$//g;
-    $target =~ s/\/*$//g;
-
+    my $target = $opt_dst;
+    
+    if( $entry ne $opt_src )
+    {
+        my $src = $opt_src;
+        $target = $entry;
+        $src =~ s/^.+(\/[^\/]+$)/$1/;
+        $target =~ s/$opt_src//;
+        $target = "$opt_dst$src$target";
+    }
+       
     my $rsync = '';
     $rsync = "$opt_sudo " if $opt_sudo;
     $rsync .= "$opt_rsync ";
-    my ( $th, $tn );
-
-    if ( !$is_file && scalar keys %excludes ) {
-        eval {
-            ( $th, $tn ) = tempfile(
-                'XXXXXXXX',
-                SUFFIX => '.' . ( fileparse( $0, qr/\.[^.]*/ ) )[0] || '$$$',
-                DIR => $opt_tmp,
-            );
-        };
-
-        if ($@) {
-            print "ERROR: can not create temp file in \"$opt_tmp\":\n$@";
-            return;
-        }
-        print $th join( "\n",
-            map { $_ eq $src ? '' : "$_/.*\n$_/*" } sort { dir_sort( $b, $a ) } keys %excludes );
-        close $th;
-        $rsync .= '--exclude-from="' . $tn . '" ';
-    }
-
-    unless ($is_file) {
-        $src    .= '/';
-        $target .= '/';
-    }
-    
-    $rsync .= "$rsync_opt \"$src\" \"$target\"";
-    pd( '[%d] %s', $id, $rsync );
+    $rsync .= "--exclude-from=\"$exclude_file\" " if $exclude_file;
+    $rsync .= "$rsync_opt \"$entry\" \"$target\"";
+    pd( '[%d] %s', $$, $rsync );
     system $rsync;
-
-    #    unlink $tn if $tn;
-}
-
-# ------------------------------------------------------------------------------
-sub dir_sort
-{
-    my ( $d1, $d2 ) = @_;
-    return scalar split( '/', $d1 ) <=> scalar split( '/', $d2 );
 }
 
 # ------------------------------------------------------------------------------
@@ -227,7 +188,7 @@ sub collect_entries
 
     my $find = '';
     $find = "$opt_sudo " if $opt_sudo;
-    $find .= "find \"$dir\" -size $opt_size -type f";
+    $find .= "find \"$dir\" -size +$opt_size -type f |";
     if ( open my $dh, $find ) {
         while ( defined( my $line = <$dh> ) ) {
             chomp $line;
