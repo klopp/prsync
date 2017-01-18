@@ -10,6 +10,7 @@ use File::Temp qw/tempfile/;
 use POSIX qw/strftime/;
 use AnyEvent::ForkManager;
 use Encode qw/decode_utf8/;
+use DDP;
 
 # ------------------------------------------------------------------------------
 my $VERSION   = '1.1';
@@ -23,12 +24,14 @@ my $opt_src;
 my $opt_dst;
 my $opt_v;
 my $opt_d;
+my $opt_small;
 
 # ------------------------------------------------------------------------------
 usage()
     unless (
     @ARGV
     && GetOptions(
+        's'       => \$opt_small,
         'v'       => \$opt_v,
         'd'       => \$opt_d,
         'p=i'     => \$opt_p,
@@ -49,7 +52,6 @@ usage("Can not find \"sudo\" executable ($opt_sudo)")
 usage("Can not find \"rsync\" executable ($opt_rsync)") unless -x $opt_rsync;
 usage("No access to temporary directory \"$opt_tmp\"")
     unless -d $opt_tmp && -w $opt_tmp;
-mkdir $opt_dst;
 
 # ------------------------------------------------------------------------------
 $opt_ropt = join ' ', @ARGV if @ARGV;
@@ -65,10 +67,11 @@ pv( 'Sync "%s" => "%s"...', $opt_src, $opt_dst );
 pv('Creating directory tree...');
 my $rsync = '';
 $rsync = "$opt_sudo " if $opt_sudo;
-$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src\" \"$opt_dst";
-$rsync =~ s/\/[^\/]*$//;
-$rsync .= '"';
+$rsync .= "$opt_rsync -a -f\"+ */\" -f\"- *\" --numeric-ids \"$opt_src/\" \"$opt_dst";
+#$rsync =~ s/\/+[^\/]*$//;
+$rsync .= '/"';
 pd($rsync);
+
 system $rsync;
 
 $spider = AnyEvent::ForkManager->new(
@@ -89,16 +92,21 @@ pv('Collect files...');
 collect_entries( $opt_src, \@entries );
 @entries = sort { scalar split( '/', $b ) <=> scalar split( '/', $a ) } @entries;
 pv('Sync directory tree...');
+p @entries;
 sync_entries( \@entries );
 
 #step 3, scan files in top-level directory:
 pv('Collect root entries...');
-$#entries = -1;
-%excludes = ();
-collect_entries( $opt_src, \@entries, 1 );
-pv('Sync root entries...');
-sync_entries( \@entries, 1 );
-
+if ($opt_small) {
+    sync_entries( [ $opt_src ] );
+}
+else {
+    $#entries = -1;
+    %excludes = ();
+    collect_entries( $opt_src, \@entries, 1 );
+    pv('Sync root entries...');
+    sync_entries( \@entries, 1 );
+}
 # ------------------------------------------------------------------------------
 sub sync_entries
 {
@@ -201,7 +209,8 @@ sub collect_entries
 
     $lvl ||= 0;
     if ($opt_sudo) {
-        my $find_args = $files_only ? '-maxdepth 1 -type f' : '-type d';
+        my $ddepth    = $opt_small  ? "-maxdepth $opt_p"    : '';
+        my $find_args = $files_only ? '-maxdepth 1 -type f' : "-type d $ddepth";
         my $find = "$opt_sudo find \"$dir\" $find_args |";
         if ( open my $dh, $find ) {
             while ( defined( my $line = <$dh> ) ) {
@@ -212,7 +221,7 @@ sub collect_entries
         }
         else {
             # TODO detect actual locale?
-            print "ERROR: can not open \"$find\":\n\t".decode_utf8($!)."\n";
+            print "ERROR: can not open \"$find\":\n\t" . decode_utf8($!) . "\n";
             exit 2;
         }
     }
@@ -226,6 +235,7 @@ sub collect_entries
                     push @{$entries}, "$dir/$_" if -f "$dir/$_";
                 }
                 else {
+                    return $entries if $opt_small && ( scalar @{$entries} >= $opt_p );
                     next unless -d "$dir/$_";
                     push @{$entries}, "$dir/$_";
                     collect_entries( "$dir/$_", $entries, $files_only, $lvl + 1 );
@@ -264,6 +274,7 @@ Valid options, * - required:
     -sudo  [PATH]  use sudo [executable], defaults: NO, executable: '%s'
     -p     N       max processes, >1, default: '%d'
     -v             increase verbosity
+    -s             optimize for small files
     -d             print debug information
     --     OPT     rsync options, default: '%s'
 
