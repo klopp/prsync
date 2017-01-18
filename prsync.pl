@@ -22,7 +22,7 @@ my $opt_sudo  = undef;
 my $opt_src;
 my $opt_dbgst;
 my $opt_v;
-my $opt_dbg;
+my $opt_d;
 my $opt_s;
 
 # ------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ usage()
     && GetOptions(
         's'       => \$opt_s,
         'v'       => \$opt_v,
-        'dbg'     => \$opt_dbg,
+        'd'       => \$opt_d,
         'p=i'     => \$opt_p,
         'src=s'   => \$opt_src,
         'dst=s'   => \$opt_dbgst,
@@ -197,7 +197,7 @@ sub pv
 # ------------------------------------------------------------------------------
 sub pd
 {
-    return _pp( $opt_dbg, @_ );
+    return _pp( $opt_d, @_ );
 }
 
 # ------------------------------------------------------------------------------
@@ -275,7 +275,7 @@ Valid options, * - required:
     -p     N       max processes, >1, default: '%d'
     -v             increase verbosity
     -s             optimize for small files
-    -dbg           print debug information
+    -d             print debug information
     --     OPT     rsync options, default: '%s'
 
 EOU
