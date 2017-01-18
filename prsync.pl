@@ -276,7 +276,7 @@ Valid options, * - required:
     -sudo  [PATH]  use sudo [executable], defaults: NO, executable: '%s'
     -p     N       max processes, >1, default: '%d'
     -v             increase verbosity
-    -s             optimize for small files
+    -s             optimize for small files (try decrease -p for best results)
     -d             print debug information
     --     OPT     rsync options, default: '%s'
 
