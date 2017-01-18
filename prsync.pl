@@ -10,7 +10,6 @@ use File::Temp qw/tempfile/;
 use POSIX qw/strftime/;
 use AnyEvent::ForkManager;
 use Encode qw/decode_utf8/;
-use DDP;
 
 # ------------------------------------------------------------------------------
 my $VERSION   = '1.1';
@@ -92,7 +91,6 @@ pv('Collect files...');
 collect_entries( $opt_src, \@entries );
 @entries = sort { scalar split( '/', $b ) <=> scalar split( '/', $a ) } @entries;
 pv('Sync directory tree...');
-p @entries;
 sync_entries( \@entries );
 
 #step 3, scan files in top-level directory:
