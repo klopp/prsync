@@ -14,6 +14,7 @@ opt_rm=
 opt_ropt="-a --delete -q"
 opt_sort=$(which sort)
 opt_find=$(which find)
+opt_tmpf=$(which tempfile)
 opt_rsync=$(which rsync)
 opt_xargs=$(which xargs)
 starttime=$SECONDS
@@ -108,6 +109,7 @@ done
 check_exe 'find' $opt_find;
 check_exe 'sort' $opt_sort;
 check_exe 'rsync' $opt_rsync;
+check_exe 'tempfile' $opt_tmpf;
 if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
 if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
 if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
@@ -122,11 +124,11 @@ opt_src=${opt_src%"${opt_src##*[!/]}"}
 
 # -----------------------------------------------------------------------------
 parts[0,0]=0
-parts[0,1]=$(tempfile -p 'prs-' -s '.include')
+parts[0,1]=$($opt_tmpf -p 'prs-' -s '.include')
 parts[0,2]=0
 for(( i = 1; i <= $opt_p; i++ )); do
     parts[$i,0]=0
-    parts[$i,1]=$(tempfile -p 'prs-' -s '.include')
+    parts[$i,1]=$($opt_tmpf -p 'prs-' -s '.include')
     parts[$i,2]=0
 done
 
