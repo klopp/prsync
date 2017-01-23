@@ -139,12 +139,14 @@ while [ $j -lt ${#files_list[*]} ]; do
         file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
 
+echo "$file_size '$file_name'"
+
         if [[ $opt_x || $opt_d ]]; then
             bi=-1
             for(( k = 0; k < $opt_b; k++ )); do
                 if [ $file_size -gt ${biggest[$k,0]} ]; then 
-                    bi=$k; break; 
-                fi 
+                    bi=$k; break;
+                fi
             done
             if [ $bi -gt -1 ]; then
                 biggest[$bi,0]=$file_size; 
@@ -152,7 +154,7 @@ while [ $j -lt ${#files_list[*]} ]; do
             fi
         fi
 
-        if [[ $opt_p -lt 2 || "${parts[$i,0]}" < "${parts[$(($i+1)),0]}" ]]; then
+        if [[ $opt_p -lt 2 || "${parts[$i,0]}" -le "${parts[$(($i+1)),0]}" ]]; then
            echo "$file_name" >> "${parts[$i,1]}"
            if [ $opt_d ]; then echo "; $file_size ${parts[$i,0]}" >> "${parts[$i,1]}"; fi
     	   parts[$i,0]=$((${parts[$i,0]}+$file_size))
