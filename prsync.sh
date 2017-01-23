@@ -70,7 +70,7 @@ Valid options, * - required:
                     about size's format see 'man find', command line key '-size' 
     -p     N        max processes, >0, default: '$opt_p'
     -v              be verbose
-    -r              delete '-dst' directory before sync
+    -c              cleanup '-dst' directory before sync
     -x              print processes info and exit (no '-dst' required)
     -d              show debug info (some as '-x', but launch sync) 
     -k              keep temporary files 
@@ -86,15 +86,14 @@ Valid options, * - required:
 # -----------------------------------------------------------------------------
 while [ "$1" ]; do
     case "$1" in
-        '-p')       opt_p="$2"; shift 2;;
-        '-b')       opt_b="$2"; shift 2;;
         '-s')       opt_s="$2"; shift 2;;
+        '-p')       opt_p="$2"; shift 2;;
         '-v')       opt_v=true; shift;;
+        '-c')       opt_rm=$(which rm); shift;;
         '-x')       opt_x=true; shift;;
         '-d')       opt_d=true; shift;;
-        '-d')       opt_d=true; shift;;
-        '-r')       opt_rm=$(which rm); shift;;
         '-k')       opt_k=true; shift;;
+        '-b')       opt_b="$2"; shift 2;;
         '-src')     opt_src="$2"; shift 2;;
         '-dst')     opt_dst="$2"; shift 2;;
         '--')       shift; opt_ropt="$@"; break;;
@@ -217,12 +216,8 @@ fi
 
 # -----------------------------------------------------------------------------
 if [ $opt_rm ]; then
-    pv "Deleting directory '%s'..." $opt_dst
-    $opt_rm -fr "$opt_dst"
-    if [ -d "$opt_dst" ]; then 
-        echo "ERROR: can not delete '$opt_dst'"
-        cleanup 1 
-    fi
+    pv "Cleaning up directory '%s'..." $opt_dst
+    $opt_rm -fr \"$opt_dst/*\"
 fi
 pv "Launching '%s' processes..." $opt_rsync
 IFS=$'\n'
