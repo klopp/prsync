@@ -77,6 +77,7 @@ function rm_tmp {
     for file_name in ${part_files[@]}; do
         rm -f "$file_name" 
     done
+    TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
 }
 
 # -----------------------------------------------------------------------------
@@ -144,6 +145,7 @@ if [[ $opt_x || $opt_v ]]; then
 fi
 if [ $opt_x ]; then 
     TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
+    rm_tmp
     exit 0; 
 fi
 
@@ -155,7 +157,6 @@ done | $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
 	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
 wait
 rm_tmp
-TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
 exit 0
 
 # -----------------------------------------------------------------------------
