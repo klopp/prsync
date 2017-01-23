@@ -176,7 +176,7 @@ done
 
 # -----------------------------------------------------------------------------
 pv "Collecting other files..."
-files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -size $opt_s -or -size -$opt_s -printf "%s %p\n" | $opt_sort -gr))
+files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -not -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 j=-1
 while [ $j -lt ${#files_list[*]} ]; do
     j=$(($j+1))                              
@@ -185,7 +185,6 @@ while [ $j -lt ${#files_list[*]} ]; do
     parts[0,2]=$((${parts[0,2]}+1))
     file_name=${BASH_REMATCH[2]}
     file_name=${file_name#$opt_src}
-#    echo "${BASH_REMATCH[1]} $file_name"
     echo "$file_name" >> "${parts[0,1]}"
     if [ $opt_d ]; then echo "; ${BASH_REMATCH[1]} ${parts[0,0]}" >> "${parts[0,1]}"; fi
 done
