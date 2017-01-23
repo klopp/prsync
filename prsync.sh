@@ -73,13 +73,13 @@ while [ "$1" ]; do
 done
 
 # -----------------------------------------------------------------------------
-if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
-if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
-check_exe 'rsync' $opt_rsync;
-check_exe 'xargs' $opt_xargs;
+check_exe 'sed' $opt_sed;
 check_exe 'find' $opt_find;
 check_exe 'sort' $opt_sort;
-check_exe 'sed' $opt_sed;
+check_exe 'rsync' $opt_rsync;
+check_exe 'xargs' $opt_xargs;
+if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
+if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ "$opt_b" =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
