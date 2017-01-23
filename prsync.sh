@@ -69,13 +69,12 @@ if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 
 # -----------------------------------------------------------------------------
-declare -A  file_sizes
-declare -a  part_files
+declare -A  parts
 
 # -----------------------------------------------------------------------------
 function rm_tmp {
-    for file_name in ${part_files[@]}; do
-        rm -f "$file_name" 
+    for(( i = 0; i <= $opt_p; i++ )); do
+        rm -f "${parts[$i,1]}" 
     done
     TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
 }
@@ -86,66 +85,70 @@ function print_files {
 }
 
 # -----------------------------------------------------------------------------
-part_files[0]="$(tempfile -p 'prs-' -s '.all')"
-file_sizes[${part_files[0]}]=0 
+parts[0,0]=0
+parts[0,1]=$(tempfile -p 'prs-' -s '.all')
 for(( i = 1; i <= $opt_p; i++ )); do
-    part_files[$i]="$(tempfile -p 'prs-' -s '.include')"
-    file_sizes[${part_files[$i]}]=0 
+    parts[$i,0]=0
+    parts[$i,1]=$(tempfile -p 'prs-' -s '.include')
 done
 
 # -----------------------------------------------------------------------------
+#var='34361835520 /home/klopp/xxx/vbox/Mint64/Mint64.vd'
+#var=${var// */}
+#echo "$var"
+#exit
+
 declare -a files_list
+OLD_IFS="$IFS"
+IFS=$'\n'
 files_list=($($opt_find "$opt_src/" -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 
 max=$(($opt_p-1))
 if [ $opt_p -lt 2 ]; then max=1; fi
 
-while [ ${#files_list[*]} -gt 0 ]; do
+j=-1
+rx='^([0-9]+) (.*)$'
+while [ $j -lt ${#files_list[*]} ]; do
 
     for(( i = 1; i <= $max; i++ )); do
 
-        file_name="${files_list[1]}"
-        if [ -z "$file_name" ]; then break; fi
+        j=$(($j+1))                              
+        if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi 
+        file_size=${BASH_REMATCH[1]}
+        file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
-        file_size="${files_list[0]}"
-        files_list=("${files_list[@]:2}")
-
-        file1=${part_files[$i]}
-        file2=${part_files[$(($i+1))]}
-
-        if [[ $opt_p -lt 2 || "${file_sizes[$file1]}" < "${file_sizes[$file2]}" ]]; then
-    	   echo "$file_name" >> "$file1"
-    	   file_sizes[$file1]=$((${file_sizes[$file1]}+$file_size))
-	else
-        echo "$file_name" >> "$file2"
-    	   file_sizes[$file2]=$((${file_sizes[$file2]}+$file_size))
-	fi
+        if [[ $opt_p -lt 2 || "${parts[$i,0]}" < "${parts[$(($i+1)),0]}" ]]; then
+           echo "$file_name" >> "${parts[$i,1]}"
+    	   parts[$i,0]=$((${parts[$i,0]}+$file_size))
+	   else
+           echo "$file_name" >> "${parts[$(($i+1)),1]}"
+           parts[$(($i+1)),0]=$((${parts[$(($i+1)),0]}+$file_size))
+	   fi
     done
 done
 
 files_list=($($opt_find "$opt_src/" -type f -size $opt_s -or -size -$opt_s -printf "%s %p\n" | $opt_sort -gr))
+IFS="$OLD_IFS"
 
-for(( i = 0; i < ${#files_list[*]}; i += 2 )); do
-    file_name="${files_list[$(($i+1))]}"
-    if [ -z "$file_name" ]; then break; fi
+j=-1
+rx='^([0-9]+) (.*)$'
+while [ $j -lt ${#files_list[*]} ]; do
+    j=$(($j+1))                              
+    if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi    
+    parts[0,0]=$((${parts[0,0]}+${BASH_REMATCH[1]}))
+    file_name=${BASH_REMATCH[2]}
     file_name=${file_name#$opt_src}
-    file_size="${files_list[$i]}"
-
-    file_sizes[${part_files[0]}]=$((${file_sizes[${part_files[0]}]}+$file_size))
-    echo "$file_name" >> "${part_files[0]}"
-
+    echo "$file_name" >> "${parts[0,1]}"
 done
 
 if [[ $opt_x || $opt_v ]]; then
-    i=1    
-    for file_name in ${!file_sizes[@]}; do
-        printf "process %d: %'.f bytes\n" $i ${file_sizes[$file_name]}
-        i=$(($i+1));
+    for(( i = 1; i <= $opt_p; i++ )); do    
+        printf "process %d: %'.f bytes\n" $i ${parts[$i,0]}
     done
+    printf "main process: %'.f bytes\n" ${parts[0,0]}
 fi
 if [ $opt_x ]; then 
-    TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
-    rm_tmp
+#    rm_tmp
     exit 0; 
 fi
 
