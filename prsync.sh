@@ -86,6 +86,8 @@ Valid options, * - required:
 # -----------------------------------------------------------------------------
 while [ "$1" ]; do
     case "$1" in
+        '-src')     opt_src="$2"; shift 2;;
+        '-dst')     opt_dst="$2"; shift 2;;
         '-s')       opt_s="$2"; shift 2;;
         '-p')       opt_p="$2"; shift 2;;
         '-v')       opt_v=true; shift;;
@@ -94,8 +96,6 @@ while [ "$1" ]; do
         '-d')       opt_d=true; shift;;
         '-k')       opt_k=true; shift;;
         '-b')       opt_b="$2"; shift 2;;
-        '-src')     opt_src="$2"; shift 2;;
-        '-dst')     opt_dst="$2"; shift 2;;
         '--')       shift; opt_ropt="$@"; break;;
         *)          usage "invalid option '$1'";;
     esac
