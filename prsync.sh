@@ -91,7 +91,9 @@ declare -A  parts
 declare -A  biggest
 
 # -----------------------------------------------------------------------------
-function rm_tmp {
+function cleanup {
+    pv 'Waiting for processes...'
+    wait
     if ! [ $opt_k ] ; then
         pv 'Removing temporaty files...'
         for(( i = 0; i <= $opt_p; i++ )); do
@@ -100,6 +102,7 @@ function rm_tmp {
     fi    
     TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
     IFS="$OLD_IFS"
+    exit 0
 }
 
 # -----------------------------------------------------------------------------
@@ -189,6 +192,7 @@ if [[ $opt_x ]]; then
     done 
 fi
 
+# -----------------------------------------------------------------------------
 declare -a sorted
 for(( i = 0; i <= $opt_p; i++ )); do
     sorted[${parts[$i,0]}]=${parts[$i,1]}
@@ -198,11 +202,7 @@ declare -a rsync_exec
 for i in ${!sorted[@]}; do
     rsync_exec=("${sorted[$i]}" ${rsync_exec[@]})
 done
-
-if [ $opt_x ]; then 
-    rm_tmp
-    exit 0; 
-fi
+if [ $opt_x ]; then cleanup; fi 
 
 # -----------------------------------------------------------------------------
 pv "Launching '%s' processes..." $opt_rsync
@@ -212,10 +212,7 @@ pv "Launching '%s' processes..." $opt_rsync
 #	$opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
 #	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
 
-pv 'Wait for processes...'
-wait
-rm_tmp
-exit 0
+cleanup
 
 # -----------------------------------------------------------------------------
 # That's All, Folks!
