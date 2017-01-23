@@ -8,6 +8,7 @@ opt_dst=
 opt_s="10M"
 opt_v=
 opt_x=
+opt_k=
 opt_ropt="-a --delete -q"
 opt_sed=$(which sed)
 opt_sort=$(which sort)
@@ -48,6 +49,7 @@ Valid options, * - required:
     -p     N        max processes, >0, default: '$opt_p'
     -v              be verbose
     -x              print processes info and exit 
+    -k              keep temporary files 
     -b     N        show N biggest files with -x, default: '$opt_b'  
     --     OPT      rsync options, default: '$opt_ropt'
 "
@@ -62,6 +64,7 @@ while [ "$1" ]; do
         '-s')       opt_s="$2"; shift 2;;
         '-v')       opt_v=true; shift;;
         '-x')       opt_x=true; shift;;
+        '-k')       opt_k=true; shift;;
         '-src')     opt_src="$2"; shift 2;;
         '-dst')     opt_dst="$2"; shift 2;;
         '--')       shift; opt_ropt="$@"; break;;
@@ -89,10 +92,12 @@ declare -A  biggest
 
 # -----------------------------------------------------------------------------
 function rm_tmp {
-    pv 'Removing temporaty files...'
-    for(( i = 0; i <= $opt_p; i++ )); do
-        rm -f "${parts[$i,1]}" 
-    done
+    if ! [ $opt_k ] ; then
+        pv 'Removing temporaty files...'
+        for(( i = 0; i <= $opt_p; i++ )); do
+            rm -f "${parts[$i,1]}" 
+        done
+    fi    
     TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
     IFS="$OLD_IFS"
 }
