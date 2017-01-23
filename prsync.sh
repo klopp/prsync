@@ -139,8 +139,6 @@ while [ $j -lt ${#files_list[*]} ]; do
         file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
 
-echo "$file_size '$file_name'"
-
         if [[ $opt_x || $opt_d ]]; then
             bi=-1
             for(( k = 0; k < $opt_b; k++ )); do
