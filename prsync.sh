@@ -44,7 +44,8 @@ declare -A  parts
 function cleanup {
 
     local rc="$1"
-    if [ -z "$rc" ]; then rc=0; fi 
+    if [ -z "$rc" ]; then rc=0; fi
+    if [ $rc ]; then opt_v=; opt_d=; opt_x=; fi 
     pv "Waiting for processes..."
     wait
     if ! [ $opt_k ] ; then
@@ -80,9 +81,6 @@ Valid options, * - required:
     -b     N        show N biggest files with -x, default: '$opt_b'  
     --     OPT      rsync options, default: '$opt_ropt'
 "
-    opt_v=
-    opt_d=
-    opt_x=
     cleanup 1
 }
 
@@ -137,6 +135,7 @@ declare -A  biggest
 declare -a files_list
 
 pv "Collecting files with size +%s..." $opt_s
+if ! [ -d "opt_src" ]; then echo "ERROR: can not read from '$opt_src'!"; cleanup 1; fi
 files_list=($($opt_find "$opt_src/" -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 max=$(($opt_p-1))
 if [ $opt_p -lt 2 ]; then max=1; fi
@@ -198,7 +197,7 @@ if [[ $opt_x || $opt_d ]]; then
     printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
     echo "Biggest files:"
     for(( i = 0; i < $opt_b; i++ )); do
-        if [ ${biggest[$i,0]} -gt 0 ]; then
+        if ! [ -z ${biggest[$i,1]} ]; then
             printf " %'18.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
         fi
     done 
