@@ -1,16 +1,16 @@
 # Multi-threaded rsync wrapper
 
 ```
-Usage: prsync.pl [options]
+Usage: prsync.sh [options]
 Valid options, * - required:
-    -src   DIR   * source directory
-    -dst   DIR   * destination directory
-    -tmp   DIR     temporary directory, default: '/tmp'
-    -rsync PATH    rsync executable, default: '/usr/bin/rsync'
-    -sudo  [PATH]  use sudo [executable], defaults: NO, executable: '/usr/bin/sudo'
-    -p     N       max processes, >1, default: '8'
-    -v             increase verbosity
-    -s             optimize for small files (try decrease -p for best results)
-    -d             print debug information
-    --     OPT     rsync options, default: '-a --delete --info=none,copy1,name1'
+    -src   DIR   *  source directory
+    -dst   DIR   *  destination directory (see '-x' option)
+    -s     SIZE     file size to put it in papallel process, default: '10M' 
+                    about size's format see 'man find', command line key '-size' 
+    -p     N        max processes, >0, default: '4'
+    -v              be verbose
+    -x              print processes info and exit (no '-dst' required)
+    -k              keep temporary files 
+    -b     N        show N biggest files with -x, default: '4'  
+    --     OPT      rsync options, default: '-a -q --delete'
 ```
