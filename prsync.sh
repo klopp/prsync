@@ -37,6 +37,27 @@ function check_exe()
 }
 
 # -----------------------------------------------------------------------------
+declare -A  parts
+
+# -----------------------------------------------------------------------------
+function cleanup {
+
+    local rc="$1"
+    if [ -z "$rc" ]; then rc=0; fi 
+    pv "Waiting for processes..."
+    wait
+    if ! [ $opt_k ] ; then
+        pv "Removing temporaty files..."
+        for(( i = 0; i <= $opt_p; i++ )); do
+            rm -f "${parts[$i,1]}" 
+        done
+    fi
+    TZ=UTC0 printf "%(Done in %H:%M:%S)T\n" $(($SECONDS-$starttime))
+    IFS="$OLD_IFS"
+    exit $rc
+}
+
+# -----------------------------------------------------------------------------
 function usage() 
 {
     if [ "$1" ]; then echo; echo "ERROR: $1!"; fi
@@ -56,7 +77,10 @@ Valid options, * - required:
     -b     N        show N biggest files with -x, default: '$opt_b'  
     --     OPT      rsync options, default: '$opt_ropt'
 "
-    exit 1
+    opt_v=false
+    opt_d=false
+    opt_x=false
+    cleanup 1
 }
 
 # -----------------------------------------------------------------------------
@@ -66,7 +90,7 @@ while [ "$1" ]; do
         '-b')       opt_b="$2"; shift 2;;
         '-s')       opt_s="$2"; shift 2;;
         '-v')       opt_v=true; shift;;
-        '-v')       opt_v=true; shift;;
+        '-x')       opt_x=true; shift;;
         '-d')       opt_d=true; shift;;
         '-d')       opt_d=true; shift;;
         '-r')       opt_rm=$(which rm); shift;;
@@ -92,25 +116,6 @@ if [ $opt_b -lt 1 ]; then usage "option '-b' can not be 0"; fi
 if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 
 # -----------------------------------------------------------------------------
-declare -A  parts
-declare -A  biggest
-
-# -----------------------------------------------------------------------------
-function cleanup {
-    pv "Waiting for processes..."
-    wait
-    if ! [ $opt_k ] ; then
-        pv "Removing temporaty files..."
-        for(( i = 0; i <= $opt_p; i++ )); do
-            rm -f "${parts[$i,1]}" 
-        done
-    fi
-    TZ=UTC0 printf "%(Done in %H:%M:%S)T\n" $(($SECONDS-$starttime))
-    IFS="$OLD_IFS"
-    exit 0
-}
-
-# -----------------------------------------------------------------------------
 parts[0,0]=0
 parts[0,1]=$(tempfile -p 'prs-' -s '.include')
 parts[0,2]=0
@@ -121,7 +126,9 @@ for(( i = 1; i <= $opt_p; i++ )); do
 done
 
 # -----------------------------------------------------------------------------
+declare -A  biggest
 declare -a files_list
+
 pv "Collecting files with size +%s..." $opt_s
 files_list=($($opt_find "$opt_src/" -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 max=$(($opt_p-1))
@@ -211,7 +218,11 @@ fi
 # -----------------------------------------------------------------------------
 if [ $opt_rm ]; then
     pv "Deleting directory '%s'..." $opt_dst
-    $opt_rm -fr $opt_dst
+    $opt_rm -fr "$opt_dst"
+    if [ -d "$opt_dst" ]; then 
+        echo "ERROR: can not delete '$opt_dst'"
+        cleanup 1 
+    fi
 fi
 pv "Launching '%s' processes..." $opt_rsync
 IFS=$'\n'
