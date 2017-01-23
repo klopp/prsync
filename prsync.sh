@@ -137,41 +137,41 @@ declare -a files_list
 pv "Collecting files with size +%s..." $opt_s
 if ! [ -d "$opt_src/" ]; then echo "ERROR: can not read from '$opt_src'!"; cleanup 1; fi
 files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
-max=$(($opt_p-1))
-if [ $opt_p -lt 2 ]; then max=1; fi
 
 rx="^([0-9]+) (.*)$"
 j=-1
 b=0 
+nan=0
+for ((i = 1, n = 2;; n = 1 << ++i)); do
+  if [[ ${n:0:1} == '-' ]]; then nan=$(((1 << i) - 1)); break; fi
+done
 
 while [ $j -lt ${#files_list[*]} ]; do
 
-    for(( i = 1; i <= $max; i++ )); do
+    j=$(($j+1))
+    if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi 
+    file_size=${BASH_REMATCH[1]}
+    file_name=${BASH_REMATCH[2]}
+    file_name=${file_name#$opt_src}
 
-        j=$(($j+1))
-        if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi 
-        file_size=${BASH_REMATCH[1]}
-        file_name=${BASH_REMATCH[2]}
-        file_name=${file_name#$opt_src}
-
-        if [ $b -lt $opt_b ]; then
-            biggest[$b,0]=$file_size
-            biggest[$b,1]=$file_name
-            b=$((b+1))
-        fi    
-
-        if [[ $opt_p -lt 2 || "${parts[$i,0]}" -le "${parts[$(($i+1)),0]}" ]]; then
-           echo "$file_name" >> "${parts[$i,1]}"
-           if [ $opt_d ]; then echo "; $file_size ${parts[$i,0]}" >> "${parts[$i,1]}"; fi
-    	   parts[$i,0]=$((${parts[$i,0]}+$file_size))
-           parts[$i,2]=$((${parts[$i,2]}+1))
-	   else
-           echo "$file_name" >> "${parts[$(($i+1)),1]}"
-           if [ $opt_d ]; then echo "; $file_size ${parts[$(($i+1)),0]}" >> "${parts[$(($i+1)),1]}"; fi
-           parts[$(($i+1)),0]=$((${parts[$(($i+1)),0]}+$file_size))
-           parts[$(($i+1)),2]=$((${parts[$(($i+1)),2]}+1))
-	   fi
-    done
+    if [ $b -lt $opt_b ]; then
+        biggest[$b,0]=$file_size
+        biggest[$b,1]=$file_name
+        b=$((b+1))
+    fi    
+    min=$nan
+    k=0
+        
+    for(( i = 1; i <= $opt_p; i++ )); do
+        if [ ${parts[$i,0]} -le $min ]; then 
+            min=${parts[$i,0]}
+            k=$i
+        fi
+    done        
+    echo "$file_name" >> "${parts[$k,1]}"
+    if [ $opt_d ]; then echo "; $file_size ${parts[$k,0]}" >> "${parts[$k,1]}"; fi
+    parts[$k,0]=$((${parts[$k,0]}+$file_size))
+    parts[$k,2]=$((${parts[$k,2]}+1))
 done
 
 # -----------------------------------------------------------------------------
