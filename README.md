@@ -1,7 +1,7 @@
 # Multi-threaded rsync wrapper
 
 ```
-Multi-threaded rsync. (C) Vsevolod Lutovinov <klopp@yandex.ru>, 2017
+Multi-threaded rsync wrapper. (C) Vsevolod Lutovinov <klopp@yandex.ru>, 2017
 Usage: prsync.sh [options]
 Valid options, * - required:
     -src   DIR   *  source directory
