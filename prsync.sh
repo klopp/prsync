@@ -66,6 +66,7 @@ while [ "$1" ]; do
         '-v')       opt_v=true; shift;;
         '-v')       opt_v=true; shift;;
         '-d')       opt_d=true; shift;;
+        '-x')       opt_x=true; shift;;
         '-k')       opt_k=true; shift;;
         '-src')     opt_src="$2"; shift 2;;
         '-dst')     opt_dst="$2"; shift 2;;
@@ -100,7 +101,7 @@ function cleanup {
         for(( i = 0; i <= $opt_p; i++ )); do
             rm -f "${parts[$i,1]}" 
         done
-    fi    
+    fi
     TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
     IFS="$OLD_IFS"
     exit 0
@@ -132,12 +133,12 @@ while [ $j -lt ${#files_list[*]} ]; do
 
     for(( i = 1; i <= $max; i++ )); do
 
-        j=$(($j+1))                              
+        j=$(($j+1))
         if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi 
         file_size=${BASH_REMATCH[1]}
         file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
-        
+
         if [[ $opt_x || $opt_d ]]; then
             bi=-1
             for(( k = 0; k < $opt_b; k++ )); do
@@ -148,15 +149,17 @@ while [ $j -lt ${#files_list[*]} ]; do
             if [ $bi -gt -1 ]; then
                 biggest[$bi,0]=$file_size; 
                 biggest[$bi,1]=$file_name; 
-            fi  
+            fi
         fi
-    
+
         if [[ $opt_p -lt 2 || "${parts[$i,0]}" < "${parts[$(($i+1)),0]}" ]]; then
            echo "$file_name" >> "${parts[$i,1]}"
+           if [ $opt_d ]; then echo "; $file_size ${parts[$i,0]}" >> "${parts[$i,1]}"; fi
     	   parts[$i,0]=$((${parts[$i,0]}+$file_size))
            parts[$i,2]=$((${parts[$i,2]}+1))
 	   else
            echo "$file_name" >> "${parts[$(($i+1)),1]}"
+           if [ $opt_d ]; then echo "; $file_size ${parts[$(($i+1)),0]}" >> "${parts[$(($i+1)),1]}"; fi
            parts[$(($i+1)),0]=$((${parts[$(($i+1)),0]}+$file_size))
            parts[$(($i+1)),2]=$((${parts[$(($i+1)),2]}+1))
 	   fi
@@ -176,6 +179,7 @@ while [ $j -lt ${#files_list[*]} ]; do
     file_name=${BASH_REMATCH[2]}
     file_name=${file_name#$opt_src}
     echo "$file_name" >> "${parts[0,1]}"
+    if [ $opt_d ]; then echo "; ${BASH_REMATCH[1]} ${parts[0,0]}" >> "${parts[0,1]}"; fi
 done
 
 if [[ $opt_x || $opt_d ]]; then
