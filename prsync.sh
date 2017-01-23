@@ -94,15 +94,15 @@ declare -A  biggest
 
 # -----------------------------------------------------------------------------
 function cleanup {
-    pv 'Waiting for processes...'
+    pv "Waiting for processes..."
     wait
     if ! [ $opt_k ] ; then
-        pv 'Removing temporaty files...'
+        pv "Removing temporaty files..."
         for(( i = 0; i <= $opt_p; i++ )); do
             rm -f "${parts[$i,1]}" 
         done
     fi
-    TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
+    TZ=UTC0 printf "%(Done in %H:%M:%S)T\n" $(($SECONDS-$starttime))
     IFS="$OLD_IFS"
     exit 0
 }
@@ -122,12 +122,13 @@ done
 
 # -----------------------------------------------------------------------------
 declare -a files_list
-pv 'Collecting files with size +%s...' $opt_s
+pv "Collecting files with size +%s..." $opt_s
 files_list=($($opt_find "$opt_src/" -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 max=$(($opt_p-1))
 if [ $opt_p -lt 2 ]; then max=1; fi
+
+rx="^([0-9]+) (.*)$"
 j=-1
-rx='^([0-9]+) (.*)$'
 
 while [ $j -lt ${#files_list[*]} ]; do
 
@@ -167,10 +168,9 @@ while [ $j -lt ${#files_list[*]} ]; do
 done
 
 # -----------------------------------------------------------------------------
-pv 'Collecting other files...'
+pv "Collecting other files..."
 files_list=($($opt_find "$opt_src/" -type f -size $opt_s -or -size -$opt_s -printf "%s %p\n" | $opt_sort -gr))
 j=-1
-rx='^([0-9]+) (.*)$'
 while [ $j -lt ${#files_list[*]} ]; do
     j=$(($j+1))                              
     if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi    
@@ -206,16 +206,21 @@ declare -a rsync_exec
 for i in ${!sorted[@]}; do
     rsync_exec=("${sorted[$i]}" ${rsync_exec[@]})
 done
-if [ $opt_x ]; then cleanup; fi 
+
+declare -a rsync_args
+IFS=' ' read -r -a rsync_args <<< "$opt_ropt"
+if [ $opt_x ]; then 
+    echo "Rsync arguments: "${rsync_args[@]}
+    cleanup; 
+fi 
 
 # -----------------------------------------------------------------------------
 pv "Launching '%s' processes..." $opt_rsync
+IFS=$'\n'
 for file_name in ${rsync_exec[@]}; do
-	echo "$file_name"
-done 
-#| $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
-#	$opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
-#	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
+   echo "$file_name"
+done | $opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
+        $opt_rsync --files-from="{}" ${rsync_args[@]} "$opt_src/" "$opt_dst/"
 
 cleanup
 
