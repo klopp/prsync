@@ -117,7 +117,7 @@ done
 
 # -----------------------------------------------------------------------------
 declare -a files_list
-pv 'Collect files with size +%s...' $opt_s
+pv 'Collecting files with size +%s...' $opt_s
 files_list=($($opt_find "$opt_src/" -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 max=$(($opt_p-1))
 if [ $opt_p -lt 2 ]; then max=1; fi
@@ -161,7 +161,7 @@ while [ $j -lt ${#files_list[*]} ]; do
 done
 
 # -----------------------------------------------------------------------------
-pv 'Collect other files...'
+pv 'Collecting other files...'
 files_list=($($opt_find "$opt_src/" -type f -size $opt_s -or -size -$opt_s -printf "%s %p\n" | $opt_sort -gr))
 j=-1
 rx='^([0-9]+) (.*)$'
