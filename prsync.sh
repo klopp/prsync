@@ -47,7 +47,8 @@ Valid options, * - required:
                     about size's format see 'man find', command line key '-size' 
     -p     N        max processes, >0, default: '$opt_p'
     -v              be verbose
-    -x              print processes info and exit (use to 
+    -x              print processes info and exit 
+    -b     N        show N biggest files with -x, default: '$opt_b'  
     --     OPT      rsync options, default: '$opt_ropt'
 "
     exit 1
