@@ -43,12 +43,12 @@ function usage()
 Usage: $(basename $0) [options]
 Valid options, * - required:
     -src   DIR   *  source directory
-    -dst   DIR   *  destination directory
+    -dst   DIR   *  destination directory (see '-x' option)
     -s     SIZE     file size to put it in papallel process, default: '$opt_size' 
                     about size's format see 'man find', command line key '-size' 
     -p     N        max processes, >0, default: '$opt_p'
     -v              be verbose
-    -x              print processes info and exit 
+    -x              print processes info and exit (no '-dst' required)
     -k              keep temporary files 
     -b     N        show N biggest files with -x, default: '$opt_b'  
     --     OPT      rsync options, default: '$opt_ropt'
@@ -74,7 +74,7 @@ done
 
 # -----------------------------------------------------------------------------
 if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
-if [ -z "$opt_dst" ]; then usage "no '-dst' option"; fi
+if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
 check_exe 'rsync' $opt_rsync;
 check_exe 'xargs' $opt_xargs;
 check_exe 'find' $opt_find;
