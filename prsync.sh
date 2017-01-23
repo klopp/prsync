@@ -116,9 +116,6 @@ for(( i = 1; i <= $opt_p; i++ )); do
     parts[$i,1]=$(tempfile -p 'prs-' -s '.include')
     parts[$i,2]=0
 done
-for(( i = 0; i < $opt_b; i++ )); do
-    biggest[$i,0]=0
-done
 
 # -----------------------------------------------------------------------------
 declare -a files_list
@@ -129,6 +126,7 @@ if [ $opt_p -lt 2 ]; then max=1; fi
 
 rx="^([0-9]+) (.*)$"
 j=-1
+b=0 
 
 while [ $j -lt ${#files_list[*]} ]; do
 
@@ -140,18 +138,11 @@ while [ $j -lt ${#files_list[*]} ]; do
         file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
 
-        if [[ $opt_x || $opt_d ]]; then
-            bi=-1
-            for(( k = 0; k < $opt_b; k++ )); do
-                if [ $file_size -gt ${biggest[$k,0]} ]; then 
-                    bi=$k; break;
-                fi
-            done
-            if [ $bi -gt -1 ]; then
-                biggest[$bi,0]=$file_size; 
-                biggest[$bi,1]=$file_name; 
-            fi
-        fi
+        if [ $b -lt $opt_b ]; then
+            biggest[$b,0]=$file_size
+            biggest[$b,1]=$file_name
+            b=$((b+1))
+        fi    
 
         if [[ $opt_p -lt 2 || "${parts[$i,0]}" -le "${parts[$(($i+1)),0]}" ]]; then
            echo "$file_name" >> "${parts[$i,1]}"
