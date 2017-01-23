@@ -9,6 +9,7 @@ opt_dst=
 opt_v=
 opt_x=
 opt_k=
+opt_d=
 opt_ropt="-a --delete -q"
 opt_sort=$(which sort)
 opt_find=$(which find)
@@ -48,6 +49,7 @@ Valid options, * - required:
     -p     N        max processes, >0, default: '$opt_p'
     -v              be verbose
     -x              print processes info and exit (no '-dst' required)
+    -d              show debug info (some as '-x', but launch sync) 
     -k              keep temporary files 
     -b     N        show N biggest files with -x, default: '$opt_b'  
     --     OPT      rsync options, default: '$opt_ropt'
@@ -62,7 +64,8 @@ while [ "$1" ]; do
         '-b')       opt_b="$2"; shift 2;;
         '-s')       opt_s="$2"; shift 2;;
         '-v')       opt_v=true; shift;;
-        '-x')       opt_x=true; shift;;
+        '-v')       opt_v=true; shift;;
+        '-d')       opt_d=true; shift;;
         '-k')       opt_k=true; shift;;
         '-src')     opt_src="$2"; shift 2;;
         '-dst')     opt_dst="$2"; shift 2;;
@@ -135,7 +138,7 @@ while [ $j -lt ${#files_list[*]} ]; do
         file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
         
-        if [ $opt_x ]; then
+        if [[ $opt_x || $opt_d ]]; then
             bi=-1
             for(( k = 0; k < $opt_b; k++ )); do
                 if [ $file_size -gt ${biggest[$k,0]} ]; then 
@@ -175,13 +178,13 @@ while [ $j -lt ${#files_list[*]} ]; do
     echo "$file_name" >> "${parts[0,1]}"
 done
 
-if [[ $opt_x ]]; then
+if [[ $opt_x || $opt_d ]]; then
     echo "Additional processes:"
     for(( i = 1; i <= $opt_p; i++ )); do    
         printf " files: %8d, bytes: %'18.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
     printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
-    echo 'Biggest files:'
+    echo "Biggest files:"
     for(( i = 0; i < $opt_b; i++ )); do
         if [ ${biggest[$i,0]} -gt 0 ]; then
             printf " %'18.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
@@ -203,9 +206,10 @@ if [ $opt_x ]; then cleanup; fi
 
 # -----------------------------------------------------------------------------
 pv "Launching '%s' processes..." $opt_rsync
-#for file_name in ${rsync_exec[@]}; do
-#	echo ${file_sizes[$file_name]} $file_name
-#done | $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
+for file_name in ${rsync_exec[@]}; do
+	echo "$file_name"
+done 
+#| $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
 #	$opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
 #	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
 
