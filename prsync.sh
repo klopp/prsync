@@ -14,6 +14,16 @@ opt_find=$(which find)
 opt_rsync=$(which rsync)
 opt_xargs=$(which xargs)
 starttime=$SECONDS
+OLD_IFS="$IFS"
+IFS=$'\n'
+
+# -----------------------------------------------------------------------------
+function pv {
+    if [ $opt_v ]; then
+        printf "$@"
+        echo 
+    fi
+}
 
 # -----------------------------------------------------------------------------
 function check_exe() 
@@ -73,39 +83,30 @@ declare -A  parts
 
 # -----------------------------------------------------------------------------
 function rm_tmp {
+    pv 'Removing temporaty files...'
     for(( i = 0; i <= $opt_p; i++ )); do
         rm -f "${parts[$i,1]}" 
     done
     TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
-}
-
-# -----------------------------------------------------------------------------
-function print_files {
-    echo "$1 : $( cat "$1" | wc -l )"
+    IFS="$OLD_IFS"
 }
 
 # -----------------------------------------------------------------------------
 parts[0,0]=0
-parts[0,1]=$(tempfile -p 'prs-' -s '.all')
+parts[0,1]=$(tempfile -p 'prs-' -s '.main')
+parts[0,2]=0
 for(( i = 1; i <= $opt_p; i++ )); do
     parts[$i,0]=0
-    parts[$i,1]=$(tempfile -p 'prs-' -s '.include')
+    parts[$i,1]=$(tempfile -p 'prs-' -s '.add')
+    parts[$i,2]=0
 done
 
 # -----------------------------------------------------------------------------
-#var='34361835520 /home/klopp/xxx/vbox/Mint64/Mint64.vd'
-#var=${var// */}
-#echo "$var"
-#exit
-
 declare -a files_list
-OLD_IFS="$IFS"
-IFS=$'\n'
+pv 'Collect files with size +%s...' $opt_s
 files_list=($($opt_find "$opt_src/" -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
-
 max=$(($opt_p-1))
 if [ $opt_p -lt 2 ]; then max=1; fi
-
 j=-1
 rx='^([0-9]+) (.*)$'
 while [ $j -lt ${#files_list[*]} ]; do
@@ -120,44 +121,61 @@ while [ $j -lt ${#files_list[*]} ]; do
         if [[ $opt_p -lt 2 || "${parts[$i,0]}" < "${parts[$(($i+1)),0]}" ]]; then
            echo "$file_name" >> "${parts[$i,1]}"
     	   parts[$i,0]=$((${parts[$i,0]}+$file_size))
+           parts[$i,2]=$((${parts[$i,2]}+1))
 	   else
            echo "$file_name" >> "${parts[$(($i+1)),1]}"
            parts[$(($i+1)),0]=$((${parts[$(($i+1)),0]}+$file_size))
+           parts[$(($i+1)),2]=$((${parts[$(($i+1)),2]}+1))
 	   fi
     done
 done
 
+# -----------------------------------------------------------------------------
+pv 'Collect other files...'
 files_list=($($opt_find "$opt_src/" -type f -size $opt_s -or -size -$opt_s -printf "%s %p\n" | $opt_sort -gr))
-IFS="$OLD_IFS"
-
 j=-1
 rx='^([0-9]+) (.*)$'
 while [ $j -lt ${#files_list[*]} ]; do
     j=$(($j+1))                              
     if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi    
     parts[0,0]=$((${parts[0,0]}+${BASH_REMATCH[1]}))
+    parts[0,2]=$((${parts[0,2]}+1))
     file_name=${BASH_REMATCH[2]}
     file_name=${file_name#$opt_src}
     echo "$file_name" >> "${parts[0,1]}"
 done
 
-if [[ $opt_x || $opt_v ]]; then
+if [[ $opt_x ]]; then
+    echo "Additional processes:"
     for(( i = 1; i <= $opt_p; i++ )); do    
-        printf "process %d: %'.f bytes\n" $i ${parts[$i,0]}
+        printf " files: %8d, bytes: %'.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
-    printf "main process: %'.f bytes\n" ${parts[0,0]}
+    printf "Main process:\n files: %8d, bytes: %'.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
 fi
+
+declare -a sorted
+for(( i = 0; i <= $opt_p; i++ )); do
+    sorted[${parts[$i,0]}]=${parts[$i,1]}
+done
+
+declare -a rsync_exec
+for i in ${!sorted[@]}; do
+    rsync_exec=("${sorted[$i]}" ${rsync_exec[@]})
+done
+
 if [ $opt_x ]; then 
-#    rm_tmp
+    rm_tmp
     exit 0; 
 fi
 
 # -----------------------------------------------------------------------------
-for file_name in ${!file_sizes[@]}; do
-	echo ${file_sizes[$file_name]} $file_name
-done | $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
-	$opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
-	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
+pv "Launching '%s' processes..." $opt_rsync
+#for file_name in ${!file_sizes[@]}; do
+#	echo ${file_sizes[$file_name]} $file_name
+#done | $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
+#	$opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
+#	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
+pv 'Wait for processes...'
 wait
 rm_tmp
 exit 0
