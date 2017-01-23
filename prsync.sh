@@ -71,7 +71,7 @@ Valid options, * - required:
     -dst   DIR   *  destination directory (see '-x' option)
     -s     SIZE     file size to put it in papallel process, default: '$opt_s' 
                     about size's format see 'man find', command line key '-size' 
-    -p     N        max processes, >0, default: '$opt_p'
+    -p     N        additional processes, >0, default: '$opt_p'
     -v              be verbose
     -c              cleanup '-dst' directory before sync
     -x              print processes info and exit (no '-dst' required)
