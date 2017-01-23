@@ -3,9 +3,9 @@
 # -----------------------------------------------------------------------------
 opt_p="4"
 opt_b="4"
+opt_s="10M"
 opt_src=
 opt_dst=
-opt_s="10M"
 opt_v=
 opt_x=
 opt_k=
@@ -139,8 +139,7 @@ while [ $j -lt ${#files_list[*]} ]; do
             bi=-1
             for(( k = 0; k < $opt_b; k++ )); do
                 if [ $file_size -gt ${biggest[$k,0]} ]; then 
-                    bi=$k;
-                    break; 
+                    bi=$k; break; 
                 fi 
             done
             if [ $bi -gt -1 ]; then
