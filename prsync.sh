@@ -68,7 +68,7 @@ Usage: $(basename $0) [options]
 Valid options, * - required:
     -src   DIR   *  source directory
     -dst   DIR   *  destination directory (see '-x' option)
-    -s     SIZE     file size to put it in papallel process, default: '$opt_size' 
+    -s     SIZE     file size to put it in papallel process, default: '$opt_s' 
                     about size's format see 'man find', command line key '-size' 
     -p     N        max processes, >0, default: '$opt_p'
     -v              be verbose
