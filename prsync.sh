@@ -85,7 +85,7 @@ if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s
 
 # -----------------------------------------------------------------------------
 declare -A  parts
-declare -a  biggest
+declare -A  biggest
 
 # -----------------------------------------------------------------------------
 function rm_tmp {
@@ -118,6 +118,7 @@ max=$(($opt_p-1))
 if [ $opt_p -lt 2 ]; then max=1; fi
 j=-1
 rx='^([0-9]+) (.*)$'
+
 while [ $j -lt ${#files_list[*]} ]; do
 
     for(( i = 1; i <= $max; i++ )); do
@@ -128,12 +129,20 @@ while [ $j -lt ${#files_list[*]} ]; do
         file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
         
-        bi=-1
-        for(( k = $opt_b; k >= 0; k-- )); do
-            if [ $file_size -gt ${biggest[$k,0]} ]; then bi=$k; fi 
-        done
-        if [ $bi -gt -1 ]; then biggest[$bi,0]=$file_size; biggest[$bi,1]=$file_name; fi  
-        
+        if [ $opt_x ]; then
+            bi=-1
+            for(( k = 0; k < $opt_b; k++ )); do
+                if [ $file_size -gt ${biggest[$k,0]} ]; then 
+                    bi=$k;
+                    break; 
+                fi 
+            done
+            if [ $bi -gt -1 ]; then
+                biggest[$bi,0]=$file_size; 
+                biggest[$bi,1]=$file_name; 
+            fi  
+        fi
+    
         if [[ $opt_p -lt 2 || "${parts[$i,0]}" < "${parts[$(($i+1)),0]}" ]]; then
            echo "$file_name" >> "${parts[$i,1]}"
     	   parts[$i,0]=$((${parts[$i,0]}+$file_size))
@@ -170,7 +179,7 @@ if [[ $opt_x ]]; then
     echo 'Biggest files:'
     for(( i = 0; i < $opt_b; i++ )); do
         if [ ${biggest[$i,0]} -gt 0 ]; then
-            printf " %'.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
+            printf " %'18.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
         fi
     done 
 fi
