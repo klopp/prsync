@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -----------------------------------------------------------------------------
-opt_p="4"
+opt_p="2"
 opt_b="4"
 opt_s="10M"
 opt_src=
@@ -52,7 +52,8 @@ function cleanup {
             rm -f "${parts[$i,1]}" 
         done
     fi
-    TZ=UTC0 printf "%(Done in %H:%M:%S)T\n" $(($SECONDS-$starttime))
+    TZ=UTC0 
+    pv "%(Done in %H:%M:%S)T\n" $(($SECONDS-$starttime))
     IFS="$OLD_IFS"
     exit $rc
 }
@@ -62,6 +63,7 @@ function usage()
 {
     if [ "$1" ]; then echo; echo "ERROR: $1!"; fi
     echo "
+Multi-threaded rsync. (C) Vsevolod Lutovinov <klopp@yandex.ru>, 2017
 Usage: $(basename $0) [options]
 Valid options, * - required:
     -src   DIR   *  source directory
@@ -77,13 +79,14 @@ Valid options, * - required:
     -b     N        show N biggest files with -x, default: '$opt_b'  
     --     OPT      rsync options, default: '$opt_ropt'
 "
-    opt_v=false
-    opt_d=false
-    opt_x=false
+    opt_v=
+    opt_d=
+    opt_x=
     cleanup 1
 }
 
 # -----------------------------------------------------------------------------
+if [ -z "$1" ]; then usage; fi
 while [ "$1" ]; do
     case "$1" in
         '-src')     opt_src="$2"; shift 2;;
