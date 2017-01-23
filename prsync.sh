@@ -10,6 +10,7 @@ opt_v=
 opt_x=
 opt_k=
 opt_d=
+opt_rm=
 opt_ropt="-a --delete -q"
 opt_sort=$(which sort)
 opt_find=$(which find)
@@ -48,6 +49,7 @@ Valid options, * - required:
                     about size's format see 'man find', command line key '-size' 
     -p     N        max processes, >0, default: '$opt_p'
     -v              be verbose
+    -r              delete '-dst' directory before sync
     -x              print processes info and exit (no '-dst' required)
     -d              show debug info (some as '-x', but launch sync) 
     -k              keep temporary files 
@@ -66,7 +68,8 @@ while [ "$1" ]; do
         '-v')       opt_v=true; shift;;
         '-v')       opt_v=true; shift;;
         '-d')       opt_d=true; shift;;
-        '-x')       opt_x=true; shift;;
+        '-d')       opt_d=true; shift;;
+        '-r')       opt_rm=$(which rm); shift;;
         '-k')       opt_k=true; shift;;
         '-src')     opt_src="$2"; shift 2;;
         '-dst')     opt_dst="$2"; shift 2;;
@@ -79,7 +82,7 @@ done
 check_exe 'find' $opt_find;
 check_exe 'sort' $opt_sort;
 check_exe 'rsync' $opt_rsync;
-check_exe 'xargs' $opt_xargs;
+if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
 if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
 if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
@@ -206,6 +209,10 @@ if [ $opt_x ]; then
 fi 
 
 # -----------------------------------------------------------------------------
+if [ $opt_rm ]; then
+    pv "Deleting directory '%s'..." $opt_dst
+    $opt_rm -fr $opt_dst
+fi
 pv "Launching '%s' processes..." $opt_rsync
 IFS=$'\n'
 for file_name in ${rsync_exec[@]}; do
