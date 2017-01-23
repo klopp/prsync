@@ -10,7 +10,6 @@ opt_v=
 opt_x=
 opt_k=
 opt_ropt="-a --delete -q"
-opt_sed=$(which sed)
 opt_sort=$(which sort)
 opt_find=$(which find)
 opt_rsync=$(which rsync)
@@ -73,7 +72,6 @@ while [ "$1" ]; do
 done
 
 # -----------------------------------------------------------------------------
-check_exe 'sed' $opt_sed;
 check_exe 'find' $opt_find;
 check_exe 'sort' $opt_sort;
 check_exe 'rsync' $opt_rsync;
