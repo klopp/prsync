@@ -23,18 +23,12 @@ IFS=$'\n'
 
 # -----------------------------------------------------------------------------
 function pv {
-    if [ $opt_v ]; then
-        printf "$@"
-        echo 
-    fi
+    if [ $opt_v ]; then printf "$@"; echo; fi
 }
 
 # -----------------------------------------------------------------------------
-function check_exe() 
-{
-    if ! [ -x "$2" ]; then
-        usage "can not find '$1' executable ($2)"
-    fi    
+function check_exe() {
+    if ! [ -x "$2" ]; then usage "can not find '$1' executable ($2)"; fi    
 }
 
 # -----------------------------------------------------------------------------
@@ -131,7 +125,7 @@ for(( i = 1; i <= $opt_p; i++ )); do
 done
 
 # -----------------------------------------------------------------------------
-declare -A  biggest
+declare -A biggest
 declare -a files_list
 
 pv "Collecting files with size +%s..." $opt_s
