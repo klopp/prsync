@@ -159,15 +159,16 @@ while [ $j -lt ${#files_list[*]} ]; do
         biggest[$b,1]=$file_name
         b=$((b+1))
     fi    
+    
     min=$nan
     k=0
-        
     for(( i = 1; i <= $opt_p; i++ )); do
         if [ ${parts[$i,0]} -le $min ]; then 
             min=${parts[$i,0]}
             k=$i
         fi
     done        
+
     echo "$file_name" >> "${parts[$k,1]}"
     if [ $opt_d ]; then echo "; $file_size ${parts[$k,0]}" >> "${parts[$k,1]}"; fi
     parts[$k,0]=$((${parts[$k,0]}+$file_size))
