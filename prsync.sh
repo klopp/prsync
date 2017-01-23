@@ -213,7 +213,6 @@ for(( i = 0; i <= $opt_p; i++ )); do
     fi
 done
 
-echo "total: $total -- "
 if [ $total -eq 0 ]; then
     pv "No files found in '$opt_src'"
     cleanup
