@@ -113,6 +113,9 @@ if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ "$opt_b" =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
 if [ $opt_b -lt 1 ]; then usage "option '-b' can not be 0"; fi
 if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
+# -- remove trailing slashes:
+opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
+opt_src=${opt_src%"${opt_src##*[!/]}"}
 
 # -----------------------------------------------------------------------------
 parts[0,0]=0
