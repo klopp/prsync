@@ -23,18 +23,12 @@ IFS=$'\n'
 
 # -----------------------------------------------------------------------------
 function pv {
-    if [ $opt_v ]; then
-        printf "$@"
-        echo 
-    fi
+    if [ $opt_v ]; then printf "$@"; echo; fi
 }
 
 # -----------------------------------------------------------------------------
-function check_exe() 
-{
-    if ! [ -x "$2" ]; then
-        usage "can not find '$1' executable ($2)"
-    fi    
+function check_exe() {
+    if ! [ -x "$2" ]; then usage "can not find '$1' executable ($2)"; fi    
 }
 
 # -----------------------------------------------------------------------------
@@ -131,7 +125,7 @@ for(( i = 1; i <= $opt_p; i++ )); do
 done
 
 # -----------------------------------------------------------------------------
-declare -A  biggest
+declare -A biggest
 declare -a files_list
 
 pv "Collecting files with size +%s..." $opt_s
@@ -215,8 +209,7 @@ for(( i = 0; i <= $opt_p; i++ )); do
 done
 
 if [ $total -eq 0 ]; then
-    pv "No files found in '$opt_src'"
-    cleanup
+    pv "No files found in '$opt_src'"; cleanup
 fi
 
 declare -a rsync_exec
@@ -227,8 +220,7 @@ done
 declare -a rsync_args
 IFS=' ' read -r -a rsync_args <<< "$opt_ropt"
 if [ $opt_x ]; then 
-    echo "Rsync arguments: "${rsync_args[@]}
-    cleanup; 
+    echo "Rsync arguments: "${rsync_args[@]}; cleanup 
 fi 
 
 # -----------------------------------------------------------------------------
@@ -242,7 +234,6 @@ for file_name in ${rsync_exec[@]}; do
    echo "$file_name"
 done | $opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
         $opt_rsync --files-from="{}" ${rsync_args[@]} "$opt_src/" "$opt_dst/"
-
 cleanup
 
 # -----------------------------------------------------------------------------
