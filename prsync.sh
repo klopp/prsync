@@ -104,11 +104,11 @@ function rm_tmp {
 
 # -----------------------------------------------------------------------------
 parts[0,0]=0
-parts[0,1]=$(tempfile -p 'prs-' -s '.main')
+parts[0,1]=$(tempfile -p 'prs-' -s '.include')
 parts[0,2]=0
 for(( i = 1; i <= $opt_p; i++ )); do
     parts[$i,0]=0
-    parts[$i,1]=$(tempfile -p 'prs-' -s '.add')
+    parts[$i,1]=$(tempfile -p 'prs-' -s '.include')
     parts[$i,2]=0
 done
 for(( i = 0; i < $opt_b; i++ )); do
