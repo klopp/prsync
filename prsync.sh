@@ -2,6 +2,7 @@
 
 # -----------------------------------------------------------------------------
 opt_p="4"
+opt_b="4"
 opt_src=
 opt_dst=
 opt_s="10M"
@@ -56,6 +57,7 @@ Valid options, * - required:
 while [ "$1" ]; do
     case "$1" in
         '-p')       opt_p="$2"; shift 2;;
+        '-b')       opt_b="$2"; shift 2;;
         '-s')       opt_s="$2"; shift 2;;
         '-v')       opt_v=true; shift;;
         '-x')       opt_x=true; shift;;
@@ -76,10 +78,13 @@ check_exe 'sort' $opt_sort;
 check_exe 'sed' $opt_sed;
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
+if ! [[ "$opt_b" =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
+if [ $opt_b -lt 1 ]; then usage "option '-b' can not be 0"; fi
 if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 
 # -----------------------------------------------------------------------------
 declare -A  parts
+declare -a  biggest
 
 # -----------------------------------------------------------------------------
 function rm_tmp {
@@ -100,6 +105,9 @@ for(( i = 1; i <= $opt_p; i++ )); do
     parts[$i,1]=$(tempfile -p 'prs-' -s '.add')
     parts[$i,2]=0
 done
+for(( i = 0; i < $opt_b; i++ )); do
+    biggest[$i,0]=0
+done
 
 # -----------------------------------------------------------------------------
 declare -a files_list
@@ -118,6 +126,13 @@ while [ $j -lt ${#files_list[*]} ]; do
         file_size=${BASH_REMATCH[1]}
         file_name=${BASH_REMATCH[2]}
         file_name=${file_name#$opt_src}
+        
+        bi=-1
+        for(( k = $opt_b; k >= 0; k-- )); do
+            if [ $file_size -gt ${biggest[$k,0]} ]; then bi=$k; fi 
+        done
+        if [ $bi -gt -1 ]; then biggest[$bi,0]=$file_size; biggest[$bi,1]=$file_name; fi  
+        
         if [[ $opt_p -lt 2 || "${parts[$i,0]}" < "${parts[$(($i+1)),0]}" ]]; then
            echo "$file_name" >> "${parts[$i,1]}"
     	   parts[$i,0]=$((${parts[$i,0]}+$file_size))
@@ -151,6 +166,12 @@ if [[ $opt_x ]]; then
         printf " files: %8d, bytes: %'.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
     printf "Main process:\n files: %8d, bytes: %'.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
+    echo 'Biggest files:'
+    for(( i = 0; i < $opt_b; i++ )); do
+        if [ ${biggest[$i,0]} -gt 0 ]; then
+            printf " %'.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
+        fi
+    done 
 fi
 
 declare -a sorted
@@ -170,11 +191,12 @@ fi
 
 # -----------------------------------------------------------------------------
 pv "Launching '%s' processes..." $opt_rsync
-#for file_name in ${!file_sizes[@]}; do
+#for file_name in ${rsync_exec[@]}; do
 #	echo ${file_sizes[$file_name]} $file_name
 #done | $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
 #	$opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
 #	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
+
 pv 'Wait for processes...'
 wait
 rm_tmp
