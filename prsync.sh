@@ -13,11 +13,7 @@ opt_sort=$(which sort)
 opt_find=$(which find)
 opt_rsync=$(which rsync)
 opt_xargs=$(which xargs)
-
 starttime=$SECONDS
-sleep 4
-TZ=UTC0 printf '%(%H:%M:%S)T\n' $(($SECONDS-$starttime))
-exit
 
 # -----------------------------------------------------------------------------
 function check_exe() 
@@ -146,7 +142,10 @@ if [[ $opt_x || $opt_v ]]; then
         i=$(($i+1));
     done
 fi
-if [ $opt_x ]; then exit 0; fi
+if [ $opt_x ]; then 
+    TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
+    exit 0; 
+fi
 
 # -----------------------------------------------------------------------------
 for file_name in ${!file_sizes[@]}; do
@@ -156,6 +155,7 @@ done | $opt_sort -gr | $opt_sed -e 's/^[0-9 ]*//g' | \
 	   $opt_rsync $opt_ropt --files-from="{}" "$opt_src/" "$opt_dst/" &
 wait
 rm_tmp
+TZ=UTC0 printf '%(Done in %H:%M:%S)T\n' $(($SECONDS-$starttime))
 exit 0
 
 # -----------------------------------------------------------------------------
