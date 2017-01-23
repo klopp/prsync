@@ -181,9 +181,9 @@ done
 if [[ $opt_x ]]; then
     echo "Additional processes:"
     for(( i = 1; i <= $opt_p; i++ )); do    
-        printf " files: %8d, bytes: %'.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
+        printf " files: %8d, bytes: %'18.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
-    printf "Main process:\n files: %8d, bytes: %'.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
+    printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
     echo 'Biggest files:'
     for(( i = 0; i < $opt_b; i++ )); do
         if [ ${biggest[$i,0]} -gt 0 ]; then
