@@ -135,8 +135,8 @@ declare -A  biggest
 declare -a files_list
 
 pv "Collecting files with size +%s..." $opt_s
-if ! [ -d "opt_src" ]; then echo "ERROR: can not read from '$opt_src'!"; cleanup 1; fi
-files_list=($($opt_find "$opt_src/" -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
+if ! [ -d "$opt_src/" ]; then echo "ERROR: can not read from '$opt_src'!"; cleanup 1; fi
+files_list=($($opt_find "$opt_src/" -minlevel 1 -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 max=$(($opt_p-1))
 if [ $opt_p -lt 2 ]; then max=1; fi
 
@@ -176,7 +176,7 @@ done
 
 # -----------------------------------------------------------------------------
 pv "Collecting other files..."
-files_list=($($opt_find "$opt_src/" -type f -size $opt_s -or -size -$opt_s -printf "%s %p\n" | $opt_sort -gr))
+files_list=($($opt_find "$opt_src/" -minlevel 1 -type f -size $opt_s -or -size -$opt_s -printf "%s %p\n" | $opt_sort -gr))
 j=-1
 while [ $j -lt ${#files_list[*]} ]; do
     j=$(($j+1))                              
@@ -205,9 +205,19 @@ fi
 
 # -----------------------------------------------------------------------------
 declare -a sorted
+total=0
 for(( i = 0; i <= $opt_p; i++ )); do
-    sorted[${parts[$i,0]}]=${parts[$i,1]}
+    if [ ${parts[$i,0]} -gt 0 ]; then
+        total=$(($total+${parts[$i,0]}))
+        sorted[${parts[$i,0]}]=${parts[$i,1]}
+    fi
 done
+
+echo "total: $total -- "
+if [ $total -eq 0 ]; then
+    pv "No files found in '$opt_src'"
+    cleanup
+fi
 
 declare -a rsync_exec
 for i in ${!sorted[@]}; do
