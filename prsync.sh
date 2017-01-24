@@ -112,7 +112,7 @@ if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
 opt_src=${opt_src%"${opt_src##*[!/]}"}
 
-
+# -----------------------------------------------------------------------------
 parts[0,0]=0
 parts[0,1]=$($opt_tmpf -p 'prs-' -s '.include')
 parts[0,2]=0
