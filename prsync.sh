@@ -107,7 +107,7 @@ if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ "$opt_b" =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
-if [ $opt_b -lt 1 ]; then usage "option '-b' can not be 0"; fi
+#if [ $opt_b -lt 1 ]; then usage "option '-b' can not be 0"; fi
 if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 # -- remove trailing slashes:
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
@@ -189,12 +189,14 @@ if [[ $opt_x || $opt_d ]]; then
         printf " files: %8d, bytes: %'18.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
     printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
-    echo "Biggest files:"
-    for(( i = 0; i < $opt_b; i++ )); do
-        if ! [ -z ${biggest[$i,1]} ]; then
-            printf " %'18.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
-        fi
-    done 
+    if [ $opt_b -gt 0 ]; then
+        echo "Biggest files:"
+        for(( i = 0; i < $opt_b; i++ )); do
+            if ! [ -z ${biggest[$i,1]} ]; then
+                printf " %'18.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
+            fi
+        done
+    fi     
 fi
 
 # -----------------------------------------------------------------------------
