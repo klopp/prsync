@@ -39,8 +39,6 @@ function cleanup {
     local rc="$1"
     if [ -z "$rc" ]; then rc=0; fi
     if [ $rc ]; then opt_v=; opt_d=; opt_x=; fi 
-    pv "Waiting for processes..."
-    wait
     if ! [ $opt_k ] ; then
         pv "Removing temporaty files..."
         for(( i = 0; i <= $opt_p; i++ )); do
@@ -236,6 +234,7 @@ for file_name in ${rsync_exec[@]}; do
    echo "$file_name"
 done | $opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
         $opt_rsync --files-from="{}" ${rsync_args[@]} "$opt_src/" "$opt_dst/"
+pv "Waiting for processes..."
 wait
 pv "Last pass: sync root..."
 $opt_rsync ${rsync_args[@]} "$opt_src/" "$opt_dst/"
