@@ -15,6 +15,6 @@ Valid options, * - required:
     -d              show debug info (some as '-x', but launch sync) 
     -k              keep temporary files 
     -b     N        show N biggest files with -x, default: '4'  
-    --     OPT      set rsync options, default: '-a --delete -q'
-    ++     OPT      add rsync options to current set
+    --     "OPT"    set rsync options, default: '-a --delete -q'
+    ++     "OPT"    add rsync options to current set
 ```
