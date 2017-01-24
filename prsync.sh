@@ -38,15 +38,15 @@ function cleanup {
 
     local rc="$1"
     if [ -z "$rc" ]; then rc=0; fi
-    if [ $rc ]; then opt_v=; opt_d=; opt_x=; fi 
+    if [ $rc -gt 0 ]; then opt_v=; opt_d=; opt_x=; fi
     if ! [ $opt_k ] ; then
         pv "Removing temporaty files..."
         for(( i = 0; i <= $opt_p; i++ )); do
             rm -f "${parts[$i,1]}" 
         done
     fi
-    TZ=UTC0 
-    pv "%(Done in %H:%M:%S)T\n" $(($SECONDS-$starttime))
+    diff=$(($SECONDS - $starttime))
+    pv "Done in %02d:%02d:%02d\n" $(($diff / 3600)) $((($diff / 60) % 60)) $(($diff % 60))
     IFS="$OLD_IFS"
     exit $rc
 }
