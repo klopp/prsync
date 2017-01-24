@@ -214,7 +214,7 @@ done
 
 declare -a rsync_args
 IFS=' ' read -r -a rsync_args <<< "$opt_ropt"
-if [ $opt_x ]; then echo "Rsync arguments: "${rsync_args[@]}; fi
+if [[ $opt_x || $opt_d ]]; then echo "Rsync arguments: "${rsync_args[@]}; fi
 
 # -----------------------------------------------------------------------------
 if [ $total_files -eq 0 ]; then
