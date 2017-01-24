@@ -59,19 +59,19 @@ function usage()
 Multi-threaded rsync. (C) Vsevolod Lutovinov <klopp@yandex.ru>, 2017
 Usage: $(basename $0) [options]
 Valid options, * - required:
-    -src   DIR   *  source directory
-    -dst   DIR   *  destination directory (see '-x' option)
-    -s     SIZE     file size to put it in papallel process, default: '$opt_s' 
-                    about size's format see 'man find', command line key '-size' 
-    -p     N        additional processes, >0, default: '$opt_p'
-    -v              be verbose
-    -c              cleanup destination directory
-    -x              print processes info and exit (no '-dst' required)
-    -d              show debug info (some as '-x', but launch sync) 
-    -k              keep temporary files 
-    -b     N        show N biggest files with -x, default: '$opt_b'  
-    --     \"OPT\"    set rsync options, default: '$opt_ropt'
-    ++     \"OPT\"    add rsync options to current set
+    -src DIR   * source directory
+    -dst DIR   * destination directory (see '-x' option)
+    -s   SIZE    file size to put it in papallel process, default: '$opt_s' 
+                 about size's format see 'man find', command line key '-size' 
+    -p   N       additional processes, >0, default: '$opt_p'
+    -v           be verbose
+    -c           cleanup destination directory
+    -x           print processes info and exit (no '-dst' required)
+    -d           show debug info (some as '-x', but launch sync) 
+    -k           keep temporary files 
+    -b   N       show N biggest files with -x, default: '$opt_b'  
+    --   \"OPT\"   set rsync options, default: '$opt_ropt'
+    ++   \"OPT\"   add rsync options to current set
 "
     cleanup 1
 }
