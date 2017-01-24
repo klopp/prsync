@@ -10,7 +10,7 @@ opt_v=
 opt_x=
 opt_k=
 opt_d=
-opt_rm=
+opt_z=0
 opt_ropt="-a --delete -q"
 opt_sort=$(which sort)
 opt_find=$(which find)
@@ -68,7 +68,8 @@ Valid options, * - required:
                     about size's format see 'man find', command line key '-size' 
     -p     N        additional processes, >0, default: '$opt_p'
     -v              be verbose
-    -c              cleanup '-dst' directory before sync
+    -c              cleanup destination directory
+    -z              sync directory tree ('-zz' - ONLY tree, no files)
     -x              print processes info and exit (no '-dst' required)
     -d              show debug info (some as '-x', but launch sync) 
     -k              keep temporary files 
@@ -87,7 +88,8 @@ while [ "$1" ]; do
         '-s')       opt_s="$2"; shift 2;;
         '-p')       opt_p="$2"; shift 2;;
         '-v')       opt_v=true; shift;;
-        '-c')       opt_rm=$(which rm); shift;;
+        '-z')       opt_z=1; shift;;
+        '-zz')      opt_z=2; shift;;
         '-x')       opt_x=true; shift;;
         '-d')       opt_d=true; shift;;
         '-k')       opt_k=true; shift;;
@@ -114,6 +116,11 @@ if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
 opt_src=${opt_src%"${opt_src##*[!/]}"}
 
+
+# -----------------------------------------------------------------------------
+#
+# TODO check opt_x, opt_c, opt_z interaction!
+#
 # -----------------------------------------------------------------------------
 parts[0,0]=0
 parts[0,1]=$($opt_tmpf -p 'prs-' -s '.include')
@@ -200,17 +207,13 @@ fi
 
 # -----------------------------------------------------------------------------
 declare -a sorted
-total=0
+total_files=0
 for(( i = 0; i <= $opt_p; i++ )); do
     if [ ${parts[$i,2]} -gt 0 ]; then
-        total=$(($total+${parts[$i,2]}))
+        total_files=$(($total_files+${parts[$i,2]}))
         sorted[${parts[$i,0]}]=${parts[$i,1]}
     fi
 done
-
-if [ $total -eq 0 ]; then
-    pv "No files found in '$opt_src'"; cleanup
-fi
 
 declare -a rsync_exec
 for i in ${!sorted[@]}; do
@@ -219,15 +222,26 @@ done
 
 declare -a rsync_args
 IFS=' ' read -r -a rsync_args <<< "$opt_ropt"
-if [ $opt_x ]; then 
-    echo "Rsync arguments: "${rsync_args[@]}; cleanup 
-fi 
+if [ $opt_x ]; then echo "Rsync arguments: "${rsync_args[@]}; fi
 
 # -----------------------------------------------------------------------------
-if [ $opt_rm ]; then
-    pv "Cleaning up directory '%s'..." $opt_dst
+if [ $total_files -eq 0 ]; then
+    pv "No files found in '$opt_src'"; cleanup
+fi
+
+if [ $opt_x ]; then cleanup; fi
+
+if [ $opt_c ]; then
+    pv "Cleanup '$opt_dst'..."
     $opt_find "$opt_dst" -mindepth 1 -exec $opt_rm -fr {} +
 fi
+
+if [ $opt_z -gt 0 ]; then
+    pv "Sync directory tree..."
+    $opt_rsync -a -q --delete --numeric-ids -f"+ */" -f"- *" "$opt_src" "$opt_dst";
+    if [ $opt_z -gt 1 ]; then cleanup; fi
+fi
+
 pv "Launching '%s' processes..." $opt_rsync
 IFS=$'\n'
 for file_name in ${rsync_exec[@]}; do
