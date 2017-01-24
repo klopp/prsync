@@ -105,7 +105,6 @@ if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ "$opt_b" =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
-#if [ $opt_b -lt 1 ]; then usage "option '-b' can not be 0"; fi
 if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 # -- remove trailing slashes:
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
@@ -149,8 +148,8 @@ while [ $j -lt ${#files_list[*]} ]; do
         biggest[$b,0]=$file_size
         biggest[$b,1]=$file_name
         b=$((b+1))
-    fi    
-    
+    fi
+
     min=$nan
     k=0
     for(( i = 1; i <= $opt_p; i++ )); do
@@ -158,7 +157,7 @@ while [ $j -lt ${#files_list[*]} ]; do
             min=${parts[$i,0]}
             k=$i
         fi
-    done        
+    done
 
     echo "$file_name" >> "${parts[$k,1]}"
     if [ $opt_d ]; then echo "; $file_size ${parts[$k,0]}" >> "${parts[$k,1]}"; fi
@@ -171,8 +170,8 @@ pv "Collecting other files..."
 files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -not -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 j=-1
 while [ $j -lt ${#files_list[*]} ]; do
-    j=$(($j+1))                              
-    if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi    
+    j=$(($j+1))
+    if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi
     parts[0,0]=$((${parts[0,0]}+${BASH_REMATCH[1]}))
     parts[0,2]=$((${parts[0,2]}+1))
     file_name=${BASH_REMATCH[2]}
@@ -194,7 +193,7 @@ if [[ $opt_x || $opt_d ]]; then
                 printf " %'18.f bytes '%s'\n" ${biggest[$i,0]} ${biggest[$i,1]}
             fi
         done
-    fi     
+    fi
 fi
 
 # -----------------------------------------------------------------------------
