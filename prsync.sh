@@ -70,7 +70,8 @@ Valid options, * - required:
     -d              show debug info (some as '-x', but launch sync) 
     -k              keep temporary files 
     -b     N        show N biggest files with -x, default: '$opt_b'  
-    --     OPT      rsync options, default: '$opt_ropt'
+    --     OPT      set rsync options, default: '$opt_ropt'
+    ++     OPT      add rsync options to current set
 "
     cleanup 1
 }
@@ -89,7 +90,8 @@ while [ "$1" ]; do
         '-d')       opt_d=true; shift;;
         '-k')       opt_k=true; shift;;
         '-b')       opt_b="$2"; shift 2;;
-        '--')       shift; opt_ropt="$@"; break;;
+        '--')       opt_ropt="$2"; shift 2;;
+        '++')       opt_ropt="$opt_ropt $2"; shift 2;;
         *)          usage "invalid option '$1'";;
     esac
 done
