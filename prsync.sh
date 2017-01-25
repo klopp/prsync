@@ -132,7 +132,7 @@ declare -a files_list
 pv "Collecting files with size +%s..." $opt_s
 if ! [ -d "$opt_src/" ]; then echo "ERROR: can not read from '$opt_src'!"; cleanup 1; fi
 files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
-
+p_files=${#files_list[*]}
 rx="^([0-9]+) (.*)$"
 j=-1
 b=0 
@@ -141,7 +141,7 @@ for ((i = 1, n = 2;; n = 1 << ++i)); do
   if [[ ${n:0:1} == '-' ]]; then nan=$(((1 << i) - 1)); break; fi
 done
 
-while [ $j -lt ${#files_list[*]} ]; do
+while [ $j -lt $p_files ]; do
 
     j=$(($j+1))
     if ! [[ "${files_list[$j]}" =~ $rx ]]; then break; fi 
@@ -191,7 +191,7 @@ if [[ $opt_x || $opt_d ]]; then
         printf " files: %8d, bytes: %'18.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
     printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
-    if [ $opt_b -gt 0 ]; then
+    if [[ $opt_b -gt 0 && $p_files -gt 0 ]]; then
         echo "Biggest files:"
         for(( i = 0; i < $opt_b; i++ )); do
             if ! [ -z ${biggest[$i,1]} ]; then
