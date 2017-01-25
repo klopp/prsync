@@ -108,8 +108,9 @@ if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
 if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
-if ! [[ "$opt_b" =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
-if ! [[ "$opt_s" -eq "0" || "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
+if ! [[ $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
+if ! [[ $opt_s -eq 0 || $opt_s =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
+if [[ $opt_s -eq 0 && $opt_p -lt 2 ]]; then usage "'-p' can be lesser than 1 if '-s' is 0"; fi  
 # -- remove trailing slashes:
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
 opt_src=${opt_src%"${opt_src##*[!/]}"}
