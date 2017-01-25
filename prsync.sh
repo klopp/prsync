@@ -56,22 +56,24 @@ function usage()
 {
     if [ "$1" ]; then echo; echo "ERROR: $1!"; fi
     echo "
-Multi-threaded rsync. (C) Vsevolod Lutovinov <klopp@yandex.ru>, 2017
+Multi-threaded rsync wrapper. (C) Vsevolod Lutovinov <klopp@yandex.ru>, 2017
 Usage: $(basename $0) [options]
 Valid options, * - required:
-    -src   DIR   *  source directory
-    -dst   DIR   *  destination directory (see '-x' option)
-    -s     SIZE     file size to put it in papallel process, default: '$opt_s' 
-                    about size's format see 'man find', command line key '-size' 
-    -p     N        additional processes, >0, default: '$opt_p'
-    -v              be verbose
-    -c              cleanup destination directory
-    -x              print processes info and exit (no '-dst' required)
-    -d              show debug info (some as '-x', but launch sync) 
-    -k              keep temporary files 
-    -b     N        show N biggest files with -x, default: '$opt_b'  
-    --     OPT      set rsync options, default: '$opt_ropt'
-    ++     OPT      add rsync options to current set
+    -src DIR   *  source directory
+    -dst DIR   *  destination directory (see '-x' option)
+    -s   SIZE     file size to put it in additional papallel process, default: '$opt_s'
+                  all files with lesser than SIZE size will be placed to 'root' process  
+                  (about size's format see 'man find', command line key '-size')
+                  if SIZE is '0' all files will be processed without 'root' process
+    -p   N        additional processes, >0, default: '$opt_p'
+    -v            be verbose
+    -c            cleanup '-dst' directory before sync
+    -x            print processes info and exit (no '-dst' required)
+    -d            show debug info (some as '-x', but launch sync) 
+    -k            keep temporary files 
+    -b   N        show N biggest files with -x, default: '$opt_b'  
+    --  \"OPT\"     set rsync options, default: '$opt_ropt'
+    ++  \"OPT\"     add rsync options to current set
 "
     cleanup 1
 }
@@ -107,12 +109,12 @@ if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ "$opt_b" =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
-if ! [[ "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
+if ! [[ "$opt_s" -eq "0" || "$opt_s" =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 # -- remove trailing slashes:
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
 opt_src=${opt_src%"${opt_src##*[!/]}"}
 
-
+# -----------------------------------------------------------------------------
 parts[0,0]=0
 parts[0,1]=$($opt_tmpf -p 'prs-' -s '.include')
 parts[0,2]=0
