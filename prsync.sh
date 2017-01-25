@@ -192,7 +192,9 @@ if [[ $opt_x || $opt_d ]]; then
     for(( i = 1; i <= $opt_p; i++ )); do    
         printf " files: %8d, bytes: %'18.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
-    printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
+    if [ $opt_s -ne 0 ]; then
+        printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
+    fi
     if [[ $opt_b -gt 0 && $p_files -gt 0 ]]; then
         echo "Biggest files:"
         for(( i = 0; i < $opt_b; i++ )); do
@@ -227,7 +229,9 @@ if [ $total_files -eq 0 ]; then
     pv "Notice: no files found in '$opt_src'!";
 fi
 
-if [ $opt_x ]; then cleanup; fi
+if ! [ $opt_d ]; then
+    if [ $opt_x ]; then cleanup; fi
+fi
 
 if [ $opt_c ]; then
     pv "Cleaning up '$opt_dst'..."
