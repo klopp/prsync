@@ -109,8 +109,8 @@ if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
-if ! [[ $opt_s -eq 0 || $opt_s =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
-if [[ $opt_s -eq 0 && $opt_p -lt 2 ]]; then usage "'-p' can be lesser than 1 if '-s' is 0"; fi  
+if ! [[ "$opt_s" = "0" || $opt_s =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
+if [[ "$opt_s" = "0" && $opt_p -lt 2 ]]; then usage "'-p' can be lesser than 1 if '-s' is 0"; fi  
 # -- remove trailing slashes:
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
 opt_src=${opt_src%"${opt_src##*[!/]}"}
@@ -171,7 +171,7 @@ while [ $j -lt $p_files ]; do
 done
 
 # -----------------------------------------------------------------------------
-if [ $opt_s -ne 0 ]; then
+if [ "$opt_s" != "0" ]; then
     pv "Collecting other files..."
     files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -not -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
     j=-1
@@ -192,7 +192,7 @@ if [[ $opt_x || $opt_d ]]; then
     for(( i = 1; i <= $opt_p; i++ )); do    
         printf " files: %8d, bytes: %'18.f (%s)\n" ${parts[$i,2]} ${parts[$i,0]} ${parts[$i,1]}
     done
-    if [ $opt_s -ne 0 ]; then
+    if [ "$opt_s" != "0" ]; then
         printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
     fi
     if [[ $opt_b -gt 0 && $p_files -gt 0 ]]; then
