@@ -128,8 +128,12 @@ done
 # -----------------------------------------------------------------------------
 declare -A biggest
 declare -a files_list
-
-pv "Collecting files with size +%s..." $opt_s
+if [ "$opt_s" == "0"; then
+    pv "Collecting files..."
+else
+    pv "Collecting files with size +%s..." $opt_s
+fi
+        
 if ! [ -d "$opt_src/" ]; then echo "ERROR: can not read from '$opt_src'!"; cleanup 1; fi
 files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 p_files=${#files_list[*]}
