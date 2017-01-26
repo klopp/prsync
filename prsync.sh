@@ -11,6 +11,7 @@ opt_x=
 opt_k=
 opt_d=
 opt_ropt="-a --delete -q"
+opt_rm=$(which rm)
 opt_sort=$(which sort)
 opt_find=$(which find)
 opt_tmpf=$(which tempfile)
@@ -105,7 +106,7 @@ check_exe 'rsync' $opt_rsync;
 check_exe 'tempfile' $opt_tmpf;
 if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
 if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
-if [ $opt_rm ]; then check_exe 'rm' $opt_rm; fi
+if [ $opt_c ]; then check_exe 'rm' $opt_rm; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
@@ -128,7 +129,7 @@ done
 # -----------------------------------------------------------------------------
 declare -A biggest
 declare -a files_list
-if [ "$opt_s" == "0"; then
+if [ "$opt_s" == "0" ]; then
     pv "Collecting files..."
 else
     pv "Collecting files with size +%s..." $opt_s
