@@ -10,6 +10,7 @@ opt_v=
 opt_x=
 opt_k=
 opt_d=
+opt_n=
 opt_ropt="-a --delete -q"
 opt_rm=$(which rm)
 opt_sort=$(which sort)
@@ -87,6 +88,7 @@ while [ "$1" ]; do
         '-dst')     opt_dst="$2"; shift 2;;
         '-s')       opt_s="$2"; shift 2;;
         '-p')       opt_p="$2"; shift 2;;
+        '-n')       opt_n=true; shift;;
         '-v')       opt_v=true; shift;;
         '-c')       opt_c=true; shift;;
         '-x')       opt_x=true; shift;;
@@ -104,9 +106,9 @@ check_exe 'find' $opt_find;
 check_exe 'sort' $opt_sort;
 check_exe 'rsync' $opt_rsync;
 check_exe 'tempfile' $opt_tmpf;
+if [ $opt_c ]; then check_exe 'rm' $opt_rm; fi
 if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
 if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
-if [ $opt_c ]; then check_exe 'rm' $opt_rm; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
@@ -118,11 +120,11 @@ opt_src=${opt_src%"${opt_src##*[!/]}"}
 
 # -----------------------------------------------------------------------------
 parts[0,0]=0
-parts[0,1]=$($opt_tmpf -p 'prs-' -s '.include')
+parts[0,1]=$($opt_tmpf -p 'prs-' -s '.root')
 parts[0,2]=0
 for(( i = 1; i <= $opt_p; i++ )); do
     parts[$i,0]=0
-    parts[$i,1]=$($opt_tmpf -p 'prs-' -s '.include')
+    parts[$i,1]=$($opt_tmpf -p 'prs-' -s '.branch')
     parts[$i,2]=0
 done
 
@@ -134,7 +136,7 @@ if [ "$opt_s" == "0" ]; then
 else
     pv "Collecting files with size +%s..." $opt_s
 fi
-        
+
 if ! [ -d "$opt_src/" ]; then echo "ERROR: can not read from '$opt_src'!"; cleanup 1; fi
 files_list=($($opt_find "$opt_src/" -mindepth 1 -type f -size +$opt_s -printf "%s %p\n" | $opt_sort -gr))
 p_files=${#files_list[*]}
@@ -212,10 +214,12 @@ fi
 
 # -----------------------------------------------------------------------------
 declare -a sorted
-total_files=0
-for(( i = 0; i <= $opt_p; i++ )); do
+#total_files=0
+i=0;
+if [ $opt_n ]; then i=1; fi
+for(( ; i <= $opt_p; i++ )); do
     if [ ${parts[$i,2]} -gt 0 ]; then
-        total_files=$(($total_files+${parts[$i,2]}))
+#        total_files=$(($total_files+${parts[$i,2]}))
         sorted[${parts[$i,0]}]=${parts[$i,1]}
     fi
 done
@@ -230,9 +234,9 @@ IFS=' ' read -r -a rsync_args <<< "$opt_ropt"
 if [[ $opt_x || $opt_d ]]; then echo "Rsync arguments: "${rsync_args[@]}; fi
 
 # -----------------------------------------------------------------------------
-if [ $total_files -eq 0 ]; then
-    pv "Notice: no files found in '$opt_src'!";
-fi
+#if [ $total_files -eq 0 ]; then
+#    pv "Notice: no files found in '$opt_src'!";
+#fi
 
 if ! [ $opt_d ]; then
     if [ $opt_x ]; then cleanup; fi
@@ -240,16 +244,20 @@ fi
 
 if [ $opt_c ]; then
     pv "Cleaning up '$opt_dst'..."
-    $opt_find "$opt_dst" -mindepth 1 -exec $opt_rm -fr {} +
+$opt_find "$opt_dst" -mindepth 1 -exec $opt_rm -fr {} + 2>/dev/null
 fi
 
-pv "Launching '%s' processes..." $opt_rsync
+pv "Launching %d '%s' processes..." ${#rsync_exec[*]} $opt_rsync
 IFS=$'\n'
 for file_name in ${rsync_exec[@]}; do
    echo "$file_name"
 done | $opt_xargs -I {} -n 1 -P $(($opt_p+1)) \
         $opt_rsync --files-from="{}" ${rsync_args[@]} "$opt_src/" "$opt_dst/"
 pv "Waiting for processes..."
+if [ $opt_n ]; then 
+    echo "Launching root process..."; 
+    $opt_rsync --files-from="${parts[0,1]}" ${rsync_args[@]} "$opt_src/" "$opt_dst/"; 
+fi
 wait
 pv "Last pass: sync root..."
 $opt_rsync ${rsync_args[@]} "$opt_src/" "$opt_dst/"
