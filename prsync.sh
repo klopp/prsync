@@ -111,10 +111,10 @@ if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
 if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
-if ! [[ $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
+if [[ $opt_b && ! $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
 if ! [[ "$opt_s" = "0" || $opt_s =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 if [[ "$opt_s" = "0" && $opt_p -lt 2 ]]; then usage "'-p' can be lesser than 1 if '-s' is 0"; fi  
-# -- remove trailing \slashes:
+# -- remove trailing slashes:
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
 opt_src=${opt_src%"${opt_src##*[!/]}"}
 
@@ -156,7 +156,7 @@ while [ $j -lt $p_files ]; do
     file_name=${BASH_REMATCH[2]}
     file_name=${file_name#$opt_src}
 
-    if [ $b -lt $opt_b ]; then
+    if [[ $opt_b && $b -lt $opt_b ]]; then
         biggest[$b,0]=$file_size
         biggest[$b,1]=$file_name
         b=$((b+1))
@@ -202,7 +202,7 @@ if [[ $opt_x || $opt_d ]]; then
     if [ "$opt_s" != "0" ]; then
         printf "Main process:\n files: %8d, bytes: %'18.f (%s)\n" ${parts[0,2]} ${parts[0,0]} ${parts[0,1]}
     fi
-    if [[ $opt_b -gt 0 && $p_files -gt 0 ]]; then
+    if [[ $opt_b && $opt_b -gt 0 && $p_files -gt 0 ]]; then
         echo "Biggest files:"
         for(( i = 0; i < $opt_b; i++ )); do
             if ! [ -z ${biggest[$i,1]} ]; then
