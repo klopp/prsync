@@ -2,7 +2,7 @@
 
 # -----------------------------------------------------------------------------
 opt_p="2"
-opt_b="4"
+opt_b=
 opt_s="10M"
 opt_src=
 opt_dst=
@@ -73,7 +73,7 @@ Valid options, * - required:
     -x            print processes info and exit (no '-dst' required)
     -d            show debug info (some as '-x', but launch sync) 
     -k            keep temporary files 
-    -b   N        show N biggest files with -x, default: '$opt_b'  
+    -b   N        show N biggest files with -x  
     --  \"OPT\"     set rsync options, default: '$opt_ropt'
     ++  \"OPT\"     add rsync options to current set
 "
@@ -114,7 +114,7 @@ if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if ! [[ $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
 if ! [[ "$opt_s" = "0" || $opt_s =~ ^[0-9]+[bcwkMG]$ ]]; then usage "invalid '-s' option ($opt_s)"; fi
 if [[ "$opt_s" = "0" && $opt_p -lt 2 ]]; then usage "'-p' can be lesser than 1 if '-s' is 0"; fi  
-# -- remove trailing slashes:
+# -- remove trailing \slashes:
 opt_dst=${opt_dst%"${opt_dst##*[!/]}"}
 opt_src=${opt_src%"${opt_src##*[!/]}"}
 
