@@ -105,8 +105,7 @@ check_exe 'sort' $opt_sort;
 check_exe 'rsync' $opt_rsync;
 check_exe 'tempfile' $opt_tmpf;
 if [ $opt_c ]; then check_exe 'rm' $opt_rm; fi
-if [ -z "$opt_src" ]; then usage "no '-src' option"; fi
-if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-dst' option"; fi
+if [[ -z "$opt_dst" && -z $opt_x ]]; then usage "no '-d' option"; fi
 if ! [[ "$opt_p" =~ ^[0-9]+$ ]]; then usage "invalid '-p' option ($opt_p)"; fi
 if [ $opt_p -lt 1 ]; then usage "option '-p' can not be 0"; fi
 if [[ $opt_b && ! $opt_b =~ ^[0-9]+$ ]]; then usage "invalid '-b' option ($opt_b)"; fi
