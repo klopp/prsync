@@ -59,40 +59,38 @@ function usage()
     if [ "$1" ]; then echo; echo "ERROR: $1!"; fi
     echo "
 Multi-threaded rsync wrapper. (C) Vsevolod Lutovinov <klopp@yandex.ru>, 2017
-Usage: $(basename $0) [options]
-Valid options, * - required:
-    -src DIR   *  source directory
-    -dst DIR   *  destination directory (see '-x' option)
-    -s   SIZE     file size to put it in additional papallel process, default: '$opt_s'
-                  all files with lesser than SIZE size will be placed to 'root' process  
-                  (about size's format see 'man find', command line key '-size')
-                  if SIZE is '0' all files will be processed without 'root' process
-    -p   N        additional processes, >0, default: '$opt_p'
-    -v            be verbose
-    -c            cleanup '-dst' directory before sync
-    -x            print processes info and exit (no '-dst' required)
-    -d            show debug info (some as '-x', but launch sync) 
-    -k            keep temporary files 
-    -b   N        show N biggest files with -x  
-    --  \"OPT\"     set rsync options, default: '$opt_ropt'
-    ++  \"OPT\"     add rsync options to current set
+Usage: $(basename $0) SRC [options]
+Valid options:
+    -d          destination directory (see '-x' option)
+    -s   SIZE   file size to put it in additional papallel process, default: '$opt_s'
+                all files with lesser than SIZE size will be placed to 'root' process  
+                (about size's format see 'man find', command line key '-size')
+                if SIZE is '0' all files will be processed without 'root' process
+    -p   N      additional processes, >0, default: '$opt_p'
+    -v          be verbose
+    -c          cleanup '-d' directory before sync
+    -x          print processes info and exit (no '-d' required)
+    -g          show debug info (some as '-x', but launch sync) 
+    -k          keep temporary files 
+    -b   N      show N biggest files with -x  
+    --  \"OPT\"   set rsync options, default: '$opt_ropt'
+    ++  \"OPT\"   add rsync options to current set
 "
     cleanup 1
 }
 
 # -----------------------------------------------------------------------------
-if [ -z "$1" ]; then usage; fi
+opt_src="$1"; shift;
 while [ "$1" ]; do
     case "$1" in
-        '-src')     opt_src="$2"; shift 2;;
-        '-dst')     opt_dst="$2"; shift 2;;
+        '-d')       opt_dst="$1"; shift;;
         '-s')       opt_s="$2"; shift 2;;
         '-p')       opt_p="$2"; shift 2;;
         '-n')       opt_n=true; shift;;
         '-v')       opt_v=true; shift;;
         '-c')       opt_c=true; shift;;
         '-x')       opt_x=true; shift;;
-        '-d')       opt_d=true; shift;;
+        '-g')       opt_d=true; shift;;
         '-k')       opt_k=true; shift;;
         '-b')       opt_b="$2"; shift 2;;
         '--')       opt_ropt="$2"; shift 2;;
