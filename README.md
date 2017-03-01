@@ -13,7 +13,7 @@ Valid options:
     -v          be verbose
     -c          cleanup '-d' directory before sync
     -x          print processes info and exit (no '-d' required)
-    -d          show debug info (some as '-x', but launch sync) 
+    -g          show debug info (some as '-x', but launch sync) 
     -k          keep temporary files 
     -b   N      show N biggest files with -x  
     --   "OPT"  set rsync options, default: '-a --delete -q'
