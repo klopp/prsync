@@ -12,7 +12,7 @@ Valid options:
     -p   N      additional processes, >0, default: '2'
     -v          be verbose
     -c          cleanup '-d' directory before sync
-    -x          print processes info and exit (no '-d' required)
+    -x          print processes info and exit (no '-g' required)
     -g          show debug info (some as '-x', but launch sync) 
     -k          keep temporary files 
     -b   N      show N biggest files with -x  
