@@ -83,7 +83,7 @@ Valid options:
 opt_src="$1"; shift;
 while [ "$1" ]; do
     case "$1" in
-        '-d')       opt_dst="$1"; shift;;
+        '-d')       opt_dst="$2"; shift 2;;
         '-s')       opt_s="$2"; shift 2;;
         '-p')       opt_p="$2"; shift 2;;
         '-n')       opt_n=true; shift;;
